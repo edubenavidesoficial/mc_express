@@ -1,0 +1,210 @@
+import 'package:flutter/material.dart';
+import 'package:mc_express/core/network/api_exception.dart';
+import 'package:mc_express/core/routes/app_routes.dart';
+import 'package:mc_express/core/theme/app_theme.dart';
+import 'package:mc_express/core/widgets/branded_scaffold.dart';
+import 'package:mc_express/features/auth/data/auth_api.dart';
+
+class AuthScreen extends StatefulWidget {
+  const AuthScreen({super.key});
+
+  @override
+  State<AuthScreen> createState() => _AuthScreenState();
+}
+
+class _AuthScreenState extends State<AuthScreen> {
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _authApi = AuthApi();
+
+  bool _isRegister = true;
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      if (_isRegister) {
+        await _authApi.register(
+          fullName: _nameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+      } else {
+        await _authApi.login(
+          phone: _phoneController.text.trim(),
+          password: _passwordController.text,
+        );
+      }
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.home,
+        (route) => false,
+      );
+    } on ApiException catch (error) {
+      setState(() => _error = error.message);
+    } catch (_) {
+      setState(() => _error = 'No se pudo conectar con el servidor');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BrandedScaffold(
+      showBack: false,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 28),
+            const Center(child: McWordmark()),
+            const SizedBox(height: 42),
+            Text(
+              _isRegister ? 'Crear cuenta' : 'Ingresar',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 36,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Conecta con profesionales reales cerca de tu ubicación.',
+              style: TextStyle(
+                color: AppTheme.mutedText,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                height: 1.35,
+                letterSpacing: 0,
+              ),
+            ),
+            const SizedBox(height: 26),
+            if (_isRegister)
+              _AuthField(
+                controller: _nameController,
+                label: 'Nombre completo',
+                icon: Icons.person_rounded,
+              ),
+            if (_isRegister) const SizedBox(height: 14),
+            _AuthField(
+              controller: _phoneController,
+              label: 'Teléfono',
+              icon: Icons.phone_rounded,
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 14),
+            if (_isRegister)
+              _AuthField(
+                controller: _emailController,
+                label: 'Correo opcional',
+                icon: Icons.mail_rounded,
+                keyboardType: TextInputType.emailAddress,
+              ),
+            if (_isRegister) const SizedBox(height: 14),
+            _AuthField(
+              controller: _passwordController,
+              label: 'Contraseña',
+              icon: Icons.lock_rounded,
+              obscureText: true,
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 14),
+              Text(
+                _error!,
+                style: const TextStyle(
+                  color: Color(0xFFFF5A52),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+            const SizedBox(height: 26),
+            DemoButton(
+              label: _isLoading
+                  ? 'CONECTANDO...'
+                  : _isRegister
+                      ? 'REGISTRARME'
+                      : 'INGRESAR',
+              onPressed: _isLoading ? () {} : _submit,
+            ),
+            const SizedBox(height: 14),
+            DemoButton(
+              label: _isRegister ? 'YA TENGO CUENTA' : 'CREAR CUENTA',
+              outlined: true,
+              onPressed: () {
+                setState(() {
+                  _isRegister = !_isRegister;
+                  _error = null;
+                });
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AuthField extends StatelessWidget {
+  const _AuthField({
+    required this.controller,
+    required this.label,
+    required this.icon,
+    this.keyboardType,
+    this.obscureText = false,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+  final TextInputType? keyboardType;
+  final bool obscureText;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: AppTheme.mutedText),
+        prefixIcon: Icon(icon, color: AppTheme.yellow),
+        filled: true,
+        fillColor: const Color(0xFF181816),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppTheme.yellow, width: 2),
+        ),
+      ),
+    );
+  }
+}
