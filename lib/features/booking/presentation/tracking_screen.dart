@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:mc_express/core/routes/app_routes.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/branded_scaffold.dart';
+import 'package:mc_express/features/booking/data/service_request_draft.dart';
 
 class TrackingScreen extends StatelessWidget {
   const TrackingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final draft =
+        ModalRoute.of(context)?.settings.arguments as ServiceRequestDraft?;
     return BrandedScaffold(
       child: SingleChildScrollView(
         child: Column(
@@ -50,8 +53,8 @@ class TrackingScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'EN CAMINO',
+            Text(
+              _statusLabel(draft),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppTheme.yellow,
@@ -62,7 +65,7 @@ class TrackingScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            const _TripInfoCard(),
+            _TripInfoCard(draft: draft),
             const SizedBox(height: 32),
             Row(
               children: [
@@ -71,7 +74,10 @@ class TrackingScreen extends StatelessWidget {
                     height: 58,
                     child: FilledButton(
                       onPressed: () {
-                        Navigator.of(context).pushNamed(AppRoutes.servicePayment);
+                        Navigator.of(context).pushNamed(
+                          AppRoutes.servicePayment,
+                          arguments: draft,
+                        );
                       },
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFFCFFF00),
@@ -121,6 +127,11 @@ class TrackingScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _statusLabel(ServiceRequestDraft? draft) {
+    if (draft == null) return 'SOLICITUD';
+    return draft.professionalName == null ? 'PENDIENTE' : 'EN PROCESO';
   }
 }
 
@@ -222,7 +233,9 @@ class _MapPainter extends CustomPainter {
 }
 
 class _TripInfoCard extends StatelessWidget {
-  const _TripInfoCard();
+  const _TripInfoCard({required this.draft});
+
+  final ServiceRequestDraft? draft;
 
   @override
   Widget build(BuildContext context) {
@@ -233,11 +246,13 @@ class _TripInfoCard extends StatelessWidget {
         color: const Color(0xFF1D1D1A),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          _InfoLine(label: 'Time remaining:', value: '8 min'),
-          SizedBox(height: 16),
-          _InfoLine(label: 'Distance remaining:', value: '1.7 km'),
+          _InfoLine(label: 'Servicio:', value: draft?.categoryName ?? 'Servicio'),
+          const SizedBox(height: 16),
+          _InfoLine(label: 'Profesional:', value: draft?.professionalName ?? 'Por asignar'),
+          const SizedBox(height: 16),
+          _InfoLine(label: 'Código:', value: 'MC-${draft?.requestId ?? '--'}'),
         ],
       ),
     );

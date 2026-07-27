@@ -2,29 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:mc_express/core/routes/app_routes.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/branded_scaffold.dart';
+import 'package:mc_express/features/booking/data/service_request_draft.dart';
 
 class ProfessionalProfileScreen extends StatelessWidget {
   const ProfessionalProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final draft =
+        ModalRoute.of(context)?.settings.arguments as ServiceRequestDraft?;
+    final professionalName = draft?.professionalName ?? 'Profesional';
+    final categoryName = draft?.categoryName ?? 'Servicio';
+    final rating = draft?.professionalRating ?? '0';
+
     return BrandedScaffold(
       child: SingleChildScrollView(
         child: Column(
           children: [
             const SizedBox(height: 8),
-            const _Header(),
+            _Header(name: professionalName, category: categoryName),
             const SizedBox(height: 20),
-            const _StatsRow(),
+            _StatsRow(rating: rating),
             const SizedBox(height: 18),
-            const _Specialties(),
+            _Specialties(category: categoryName),
             const SizedBox(height: 18),
             const _ReviewCard(),
             const SizedBox(height: 22),
-            DemoButton(
-              label: 'SOLICITAR A CARLOS',
+            AppButton(
+              label: 'SOLICITAR A ${professionalName.toUpperCase()}',
               onPressed: () {
-                Navigator.of(context).pushNamed(AppRoutes.bookingSummary);
+                Navigator.of(context).pushNamed(
+                  AppRoutes.bookingSummary,
+                  arguments: draft,
+                );
               },
             ),
           ],
@@ -35,7 +45,10 @@ class ProfessionalProfileScreen extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header();
+  const _Header({required this.name, required this.category});
+
+  final String name;
+  final String category;
 
   @override
   Widget build(BuildContext context) {
@@ -47,28 +60,28 @@ class _Header extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppTheme.yellow.withValues(alpha: 0.5)),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          CircleAvatar(
+          const CircleAvatar(
             radius: 48,
             backgroundColor: AppTheme.yellow,
             child: Icon(Icons.person_rounded, color: AppTheme.black, size: 66),
           ),
-          SizedBox(height: 14),
+          const SizedBox(height: 14),
           Text(
-            'Carlos M.',
-            style: TextStyle(
+            name,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 30,
               fontWeight: FontWeight.w900,
               letterSpacing: 0,
             ),
           ),
-          SizedBox(height: 5),
+          const SizedBox(height: 5),
           Text(
-            'Plomero certificado · Disponible ahora',
+            '$category · Disponible ahora',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.mutedText,
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -82,17 +95,19 @@ class _Header extends StatelessWidget {
 }
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow();
+  const _StatsRow({required this.rating});
+
+  final String rating;
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       children: [
-        Expanded(child: _StatBox(label: 'Rating', value: '4.9')),
-        SizedBox(width: 10),
-        Expanded(child: _StatBox(label: 'Servicios', value: '312')),
-        SizedBox(width: 10),
-        Expanded(child: _StatBox(label: 'Llegada', value: '8 min')),
+        Expanded(child: _StatBox(label: 'Rating', value: rating)),
+        const SizedBox(width: 10),
+        const Expanded(child: _StatBox(label: 'Estado', value: 'Activo')),
+        const SizedBox(width: 10),
+        const Expanded(child: _StatBox(label: 'Llegada', value: 'Cerca')),
       ],
     );
   }
@@ -141,7 +156,9 @@ class _StatBox extends StatelessWidget {
 }
 
 class _Specialties extends StatelessWidget {
-  const _Specialties();
+  const _Specialties({required this.category});
+
+  final String category;
 
   @override
   Widget build(BuildContext context) {
@@ -152,10 +169,10 @@ class _Specialties extends StatelessWidget {
         color: const Color(0xFF181816),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Especialidades',
             style: TextStyle(
               color: Colors.white,
@@ -164,15 +181,15 @@ class _Specialties extends StatelessWidget {
               letterSpacing: 0,
             ),
           ),
-          SizedBox(height: 14),
+          const SizedBox(height: 14),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              _SkillChip(label: 'Fugas'),
-              _SkillChip(label: 'Lavamanos'),
-              _SkillChip(label: 'Tuberías'),
-              _SkillChip(label: 'Emergencias'),
+              _SkillChip(label: category),
+              const _SkillChip(label: 'Servicio a domicilio'),
+              const _SkillChip(label: 'Atención rápida'),
+              const _SkillChip(label: 'Cotización previa'),
             ],
           ),
         ],

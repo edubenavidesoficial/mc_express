@@ -6,6 +6,10 @@ async function loadDashboard() {
     fetch(`${API_BASE_URL}/admin/requests`),
   ]);
 
+  if (!dashboardResponse.ok || !requestsResponse.ok) {
+    throw new Error("API request failed");
+  }
+
   const dashboard = await dashboardResponse.json();
   const requests = await requestsResponse.json();
 
@@ -20,9 +24,10 @@ async function loadDashboard() {
   requests.forEach((request) => {
     const item = document.createElement("div");
     item.className = "request";
+    const price = request.estimated_price ? `$${request.estimated_price}` : "";
     item.innerHTML = `
       <strong>#${request.id}</strong>
-      <span>${request.address}</span>
+      <span>${request.address || "Sin direccion"} ${price}</span>
       <span class="status">${request.status}</span>
     `;
     list.appendChild(item);

@@ -160,8 +160,8 @@ class McWordmark extends StatelessWidget {
   }
 }
 
-class DemoButton extends StatelessWidget {
-  const DemoButton({
+class AppButton extends StatelessWidget {
+  const AppButton({
     super.key,
     required this.label,
     required this.onPressed,
@@ -209,8 +209,8 @@ class DemoButton extends StatelessWidget {
   }
 }
 
-class DemoBottomNav extends StatelessWidget {
-  const DemoBottomNav({super.key, required this.currentIndex});
+class AppBottomNav extends StatelessWidget {
+  const AppBottomNav({super.key, required this.currentIndex});
 
   final int currentIndex;
 

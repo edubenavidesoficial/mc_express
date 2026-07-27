@@ -2,12 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:mc_express/core/routes/app_routes.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/branded_scaffold.dart';
+import 'package:mc_express/features/booking/data/service_request_draft.dart';
+import 'package:mc_express/features/booking/data/service_requests_api.dart';
 
-class ServicePaymentScreen extends StatelessWidget {
+class ServicePaymentScreen extends StatefulWidget {
   const ServicePaymentScreen({super.key});
 
   @override
+  State<ServicePaymentScreen> createState() => _ServicePaymentScreenState();
+}
+
+class _ServicePaymentScreenState extends State<ServicePaymentScreen> {
+  final _api = ServiceRequestsApi();
+  bool _saving = false;
+
+  @override
   Widget build(BuildContext context) {
+    final draft =
+        ModalRoute.of(context)?.settings.arguments as ServiceRequestDraft?;
+    final amount = draft?.estimatedPrice ?? 0;
     return BrandedScaffold(
       child: SingleChildScrollView(
         child: Column(
@@ -36,7 +49,7 @@ class ServicePaymentScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 36),
-            const _AmountLine(),
+            _AmountLine(amount: amount),
             const SizedBox(height: 30),
             const Text(
               'Formas de pago: Efectivo, Transferencia\nbancaria, Billeteras digitales',
@@ -83,26 +96,45 @@ class ServicePaymentScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 26),
-            DemoButton(
+            AppButton(
               label: 'PAGAR CON SALDO',
               outlined: true,
               onPressed: () {
-                Navigator.of(context).pushNamed(AppRoutes.balancePayment);
+                Navigator.of(context).pushNamed(
+                  AppRoutes.balancePayment,
+                  arguments: draft,
+                );
               },
             ),
             const SizedBox(height: 18),
-            DemoButton(
-              label: 'PAGO RECIBIDO',
-              onPressed: () {
-                Navigator.of(context).pushNamed(AppRoutes.rating);
+            AppButton(
+              label: _saving ? 'GUARDANDO...' : 'PAGO RECIBIDO',
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                if (draft?.requestId != null) {
+                  setState(() => _saving = true);
+                  await _api.registerPayment(
+                    requestId: draft!.requestId!,
+                    amount: amount,
+                    method: 'cash',
+                  );
+                }
+                if (!mounted) return;
+                navigator.pushNamed(
+                  AppRoutes.rating,
+                  arguments: draft,
+                );
               },
             ),
             const SizedBox(height: 18),
-            DemoButton(
+            AppButton(
               label: 'REGRESAR AL TRABAJO',
               outlined: true,
               onPressed: () {
-                Navigator.of(context).pushNamed(AppRoutes.tracking);
+                Navigator.of(context).pushNamed(
+                  AppRoutes.tracking,
+                  arguments: draft,
+                );
               },
             ),
           ],
@@ -113,25 +145,27 @@ class ServicePaymentScreen extends StatelessWidget {
 }
 
 class _AmountLine extends StatelessWidget {
-  const _AmountLine();
+  const _AmountLine({required this.amount});
+
+  final double amount;
 
   @override
   Widget build(BuildContext context) {
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: RichText(
-        text: const TextSpan(
-          style: TextStyle(
+        text: TextSpan(
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 28,
             fontWeight: FontWeight.w500,
             letterSpacing: 0,
           ),
           children: [
-            TextSpan(text: 'Monto total: '),
+            const TextSpan(text: 'Monto total: '),
             TextSpan(
-              text: r'$28,00',
-              style: TextStyle(
+              text: '\$${amount.toStringAsFixed(2)}',
+              style: const TextStyle(
                 color: AppTheme.yellow,
                 fontSize: 54,
                 fontWeight: FontWeight.w900,

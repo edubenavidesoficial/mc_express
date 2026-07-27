@@ -138,7 +138,7 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
             ],
             const SizedBox(height: 26),
-            DemoButton(
+            AppButton(
               label: _isLoading
                   ? 'CONECTANDO...'
                   : _isRegister
@@ -147,7 +147,7 @@ class _AuthScreenState extends State<AuthScreen> {
               onPressed: _isLoading ? () {} : _submit,
             ),
             const SizedBox(height: 14),
-            DemoButton(
+            AppButton(
               label: _isRegister ? 'YA TENGO CUENTA' : 'CREAR CUENTA',
               outlined: true,
               onPressed: () {

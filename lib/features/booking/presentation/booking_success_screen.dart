@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:mc_express/core/routes/app_routes.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/branded_scaffold.dart';
+import 'package:mc_express/features/booking/data/service_request_draft.dart';
 
 class BookingSuccessScreen extends StatelessWidget {
   const BookingSuccessScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final draft =
+        ModalRoute.of(context)?.settings.arguments as ServiceRequestDraft?;
+    final professional = draft?.professionalName ?? 'El profesional';
     return BrandedScaffold(
       showBack: false,
       child: Column(
@@ -48,8 +52,8 @@ class BookingSuccessScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Carlos aceptó el servicio y va camino a tu ubicación.',
+          Text(
+            'Tu solicitud de ${draft?.categoryName ?? 'servicio'} fue registrada correctamente.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppTheme.mutedText,
@@ -60,18 +64,21 @@ class BookingSuccessScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 26),
-          const _NotificationCard(),
+          _NotificationCard(professional: professional),
           const SizedBox(height: 18),
-          const _StatusPanel(),
+          _StatusPanel(requestId: draft?.requestId),
           const Spacer(),
-          DemoButton(
+          AppButton(
             label: 'VER SEGUIMIENTO',
             onPressed: () {
-              Navigator.of(context).pushReplacementNamed(AppRoutes.tracking);
+              Navigator.of(context).pushReplacementNamed(
+                AppRoutes.tracking,
+                arguments: draft,
+              );
             },
           ),
           const SizedBox(height: 14),
-          DemoButton(
+          AppButton(
             label: 'VOLVER AL INICIO',
             outlined: true,
             onPressed: () {
@@ -88,7 +95,9 @@ class BookingSuccessScreen extends StatelessWidget {
 }
 
 class _NotificationCard extends StatelessWidget {
-  const _NotificationCard();
+  const _NotificationCard({required this.professional});
+
+  final String professional;
 
   @override
   Widget build(BuildContext context) {
@@ -100,14 +109,14 @@ class _NotificationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppTheme.yellow.withValues(alpha: 0.30)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.notifications_active_rounded, color: AppTheme.yellow),
-          SizedBox(width: 12),
+          const Icon(Icons.notifications_active_rounded, color: AppTheme.yellow),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Carlos aceptó tu solicitud',
-              style: TextStyle(
+              '$professional recibirá tu solicitud',
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w900,
@@ -122,7 +131,9 @@ class _NotificationCard extends StatelessWidget {
 }
 
 class _StatusPanel extends StatelessWidget {
-  const _StatusPanel();
+  const _StatusPanel({required this.requestId});
+
+  final int? requestId;
 
   @override
   Widget build(BuildContext context) {
@@ -134,13 +145,13 @@ class _StatusPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppTheme.yellow.withValues(alpha: 0.35)),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          _StatusLine(label: 'Llegada estimada', value: '8 min'),
-          SizedBox(height: 14),
-          _StatusLine(label: 'Distancia', value: '1.2 km'),
-          SizedBox(height: 14),
-          _StatusLine(label: 'Código de servicio', value: 'MC-2048'),
+          const _StatusLine(label: 'Estado', value: 'Pendiente'),
+          const SizedBox(height: 14),
+          const _StatusLine(label: 'Ubicación', value: 'Registrada'),
+          const SizedBox(height: 14),
+          _StatusLine(label: 'Código de servicio', value: 'MC-${requestId ?? '--'}'),
         ],
       ),
     );

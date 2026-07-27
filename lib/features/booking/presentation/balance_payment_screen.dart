@@ -2,12 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:mc_express/core/routes/app_routes.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/branded_scaffold.dart';
+import 'package:mc_express/features/booking/data/service_request_draft.dart';
+import 'package:mc_express/features/booking/data/service_requests_api.dart';
 
-class BalancePaymentScreen extends StatelessWidget {
+class BalancePaymentScreen extends StatefulWidget {
   const BalancePaymentScreen({super.key});
 
   @override
+  State<BalancePaymentScreen> createState() => _BalancePaymentScreenState();
+}
+
+class _BalancePaymentScreenState extends State<BalancePaymentScreen> {
+  final _api = ServiceRequestsApi();
+  late Future<double> _balanceFuture;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _balanceFuture = _api.walletBalance();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final draft =
+        ModalRoute.of(context)?.settings.arguments as ServiceRequestDraft?;
+    final amount = draft?.estimatedPrice ?? 0;
     return BrandedScaffold(
       showBack: true,
       child: SingleChildScrollView(
@@ -28,28 +49,58 @@ class BalancePaymentScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              r'$45,00',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 42,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0,
-              ),
+            FutureBuilder<double>(
+              future: _balanceFuture,
+              builder: (context, snapshot) {
+                final balance = snapshot.data ?? 0;
+                return Text(
+                  '\$${balance.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 42,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0,
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 46),
-            const _ServiceDetail(),
+            _ServiceDetail(amount: amount),
             const SizedBox(height: 34),
             const _DiscountNote(),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(_error!, style: const TextStyle(color: Color(0xFFFF5A52))),
+            ],
             const SizedBox(height: 42),
-            DemoButton(
-              label: 'CONFIRMAR PAGO',
-              onPressed: () {
-                Navigator.of(context).pushNamed(AppRoutes.recharge);
+            AppButton(
+              label: _saving ? 'PAGANDO...' : 'CONFIRMAR PAGO',
+              onPressed: () async {
+                if (draft?.requestId == null) return;
+                final navigator = Navigator.of(context);
+                setState(() {
+                  _saving = true;
+                  _error = null;
+                });
+                try {
+                  await _api.payWithWallet(
+                    requestId: draft!.requestId!,
+                    amount: amount,
+                  );
+                  if (!mounted) return;
+                  navigator.pushNamed(
+                    AppRoutes.rating,
+                    arguments: draft,
+                  );
+                } catch (_) {
+                  setState(() => _error = 'Saldo insuficiente. Recarga tu cuenta.');
+                } finally {
+                  if (mounted) setState(() => _saving = false);
+                }
               },
             ),
             const SizedBox(height: 18),
-            DemoButton(
+            AppButton(
               label: 'VOLVER',
               backgroundColor: Colors.white,
               foregroundColor: AppTheme.yellow,
@@ -91,14 +142,16 @@ class _Title extends StatelessWidget {
 }
 
 class _ServiceDetail extends StatelessWidget {
-  const _ServiceDetail();
+  const _ServiceDetail({required this.amount});
+
+  final double amount;
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(Icons.speed_rounded, color: AppTheme.yellow, size: 26),
             SizedBox(width: 8),
@@ -113,14 +166,14 @@ class _ServiceDetail extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: 22),
-        _DetailLine(label: 'Monto total:', value: r'$28,00'),
-        SizedBox(height: 16),
-        _DetailLine(label: 'Comisión plataforma', value: r'15%: $4,20'),
-        SizedBox(height: 16),
-        _DetailLine(label: 'Total a descontar:', value: r'$28,00'),
-        SizedBox(height: 22),
-        Divider(color: Color(0xFF494949)),
+        const SizedBox(height: 22),
+        _DetailLine(label: 'Monto total:', value: '\$${amount.toStringAsFixed(2)}'),
+        const SizedBox(height: 16),
+        const _DetailLine(label: 'Método:', value: 'Saldo'),
+        const SizedBox(height: 16),
+        _DetailLine(label: 'Total a descontar:', value: '\$${amount.toStringAsFixed(2)}'),
+        const SizedBox(height: 22),
+        const Divider(color: Color(0xFF494949)),
       ],
     );
   }

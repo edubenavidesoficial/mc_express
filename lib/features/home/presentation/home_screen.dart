@@ -3,6 +3,8 @@ import 'package:mc_express/core/constants/app_assets.dart';
 import 'package:mc_express/core/routes/app_routes.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/branded_scaffold.dart';
+import 'package:mc_express/features/booking/data/service_request_draft.dart';
+import 'package:mc_express/features/search/data/professionals_api.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -72,7 +74,7 @@ class HomeScreen extends StatelessWidget {
                       const _CategoryGrid(),
                       SizedBox(height: compact ? 24 : 32),
                       const _RequestServiceButton(),
-                      const DemoBottomNav(currentIndex: 0),
+                      const AppBottomNav(currentIndex: 0),
                     ],
                   ),
                 ),
@@ -172,8 +174,21 @@ class _HeroTitle extends StatelessWidget {
   }
 }
 
-class _ServiceSearchField extends StatelessWidget {
+class _ServiceSearchField extends StatefulWidget {
   const _ServiceSearchField();
+
+  @override
+  State<_ServiceSearchField> createState() => _ServiceSearchFieldState();
+}
+
+class _ServiceSearchFieldState extends State<_ServiceSearchField> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -191,73 +206,123 @@ class _ServiceSearchField extends StatelessWidget {
           ),
         ],
       ),
-      child: const Row(
+      child: Row(
         children: [
           Expanded(
-            child: Text(
-              'Buscar servicio...',
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Color(0xFF777777),
+            child: TextField(
+              controller: _controller,
+              onSubmitted: _search,
+              style: const TextStyle(
+                color: AppTheme.black,
                 fontSize: 20,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 0,
+              ),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                hintText: 'Buscar servicio...',
+                hintStyle: TextStyle(
+                  color: Color(0xFF777777),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0,
+                ),
               ),
             ),
           ),
-          Icon(Icons.search_rounded, color: AppTheme.black, size: 36),
+          IconButton(
+            onPressed: () => _search(_controller.text),
+            icon: const Icon(Icons.search_rounded, color: AppTheme.black, size: 36),
+          ),
         ],
       ),
     );
   }
+
+  void _search(String value) {
+    Navigator.of(context).pushNamed(AppRoutes.professionals, arguments: value.trim());
+  }
 }
 
-class _CategoryGrid extends StatelessWidget {
+class _CategoryGrid extends StatefulWidget {
   const _CategoryGrid();
 
   @override
-  Widget build(BuildContext context) {
-    const categories = [
-      _ServiceCategory(
-        label: 'Albañiles',
-        icon: Icons.engineering_rounded,
-      ),
-      _ServiceCategory(
-        label: 'Jardineros',
-        icon: Icons.energy_savings_leaf_rounded,
-      ),
-      _ServiceCategory(
-        label: 'Plomeros',
-        icon: Icons.plumbing_rounded,
-      ),
-      _ServiceCategory(
-        label: 'Electricistas',
-        icon: Icons.bolt_rounded,
-      ),
-      _ServiceCategory(
-        label: 'Pintores',
-        icon: Icons.format_paint_rounded,
-      ),
-      _ServiceCategory(
-        label: 'Más',
-        icon: Icons.more_horiz_rounded,
-      ),
-    ];
+  State<_CategoryGrid> createState() => _CategoryGridState();
+}
 
-    return GridView.builder(
-      itemCount: categories.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 14,
-        crossAxisSpacing: 14,
-        childAspectRatio: 0.92,
-      ),
-      itemBuilder: (context, index) {
-        return _CategoryCard(category: categories[index]);
+class _CategoryGridState extends State<_CategoryGrid> {
+  final _professionalsApi = ProfessionalsApi();
+  late Future<List<CategoryDto>> _categoriesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _categoriesFuture = _professionalsApi.categories();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<CategoryDto>>(
+      future: _categoriesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 170,
+            child: Center(
+              child: CircularProgressIndicator(color: AppTheme.yellow),
+            ),
+          );
+        }
+        if (snapshot.hasError) {
+          return _ApiMessage(
+            message: 'No se pudieron cargar las categorías.',
+            onRetry: () {
+              setState(() {
+                _categoriesFuture = _professionalsApi.categories();
+              });
+            },
+          );
+        }
+
+        final categories = snapshot.data ?? const [];
+        if (categories.isEmpty) {
+          return const _ApiMessage(message: 'Aún no hay categorías activas.');
+        }
+
+        return GridView.builder(
+          itemCount: categories.length,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 14,
+            crossAxisSpacing: 14,
+            childAspectRatio: 0.92,
+          ),
+          itemBuilder: (context, index) {
+            final category = categories[index];
+            return _CategoryCard(
+              category: _ServiceCategory(
+                id: category.id,
+                label: category.name,
+                icon: _iconForCategory(category.name),
+              ),
+            );
+          },
+        );
       },
     );
+  }
+
+  IconData _iconForCategory(String name) {
+    final value = name.toLowerCase();
+    if (value.contains('alba')) return Icons.engineering_rounded;
+    if (value.contains('jardin')) return Icons.energy_savings_leaf_rounded;
+    if (value.contains('plom')) return Icons.plumbing_rounded;
+    if (value.contains('elect')) return Icons.bolt_rounded;
+    if (value.contains('pint')) return Icons.format_paint_rounded;
+    return Icons.handyman_rounded;
   }
 }
 
@@ -268,48 +333,60 @@ class _CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF0C0C0C),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: const Color(0xFF3E3E3E),
-          width: 1.8,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.white.withValues(alpha: 0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 1),
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).pushNamed(
+          AppRoutes.professionals,
+          arguments: ServiceRequestDraft(
+            categoryId: category.id,
+            categoryName: category.label,
           ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.50),
-            blurRadius: 12,
-            offset: const Offset(0, 7),
+        );
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF0C0C0C),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: const Color(0xFF3E3E3E),
+            width: 1.8,
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(6, 12, 6, 9),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(category.icon, color: AppTheme.yellow, size: 42),
-            const SizedBox(height: 11),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                category.label,
-                maxLines: 1,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0,
-                ),
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withValues(alpha: 0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 1),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.50),
+              blurRadius: 12,
+              offset: const Offset(0, 7),
             ),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(6, 12, 6, 9),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(category.icon, color: AppTheme.yellow, size: 42),
+              const SizedBox(height: 11),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  category.label,
+                  maxLines: 1,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -362,10 +439,53 @@ class _RequestServiceButton extends StatelessWidget {
 
 class _ServiceCategory {
   const _ServiceCategory({
+    required this.id,
     required this.label,
     required this.icon,
   });
 
+  final int id;
   final String label;
   final IconData icon;
+}
+
+class _ApiMessage extends StatelessWidget {
+  const _ApiMessage({required this.message, this.onRetry});
+
+  final String message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF181816),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+          if (onRetry != null) ...[
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: onRetry,
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }

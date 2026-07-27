@@ -64,7 +64,7 @@ class SplashScreen extends StatelessWidget {
                         Navigator.of(context).pushNamed(AppRoutes.home);
                       },
                       child: const Text(
-                        'Continuar sin cuenta',
+                        'Explorar servicios',
                         style: TextStyle(
                           color: AppTheme.yellow,
                           fontWeight: FontWeight.w900,
@@ -74,7 +74,7 @@ class SplashScreen extends StatelessWidget {
                     const SizedBox(height: 14),
                     Center(
                       child: Text(
-                        'Primera demo visual',
+                        'Conectado a MC Express',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ),

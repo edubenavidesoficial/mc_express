@@ -3,6 +3,7 @@ import 'package:mc_express/core/routes/app_routes.dart';
 import 'package:mc_express/core/storage/session_store.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/branded_scaffold.dart';
+import 'package:mc_express/features/booking/data/service_request_draft.dart';
 import 'package:mc_express/features/booking/data/service_requests_api.dart';
 
 class BookingSummaryScreen extends StatefulWidget {
@@ -17,7 +18,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
   bool _isSaving = false;
   String? _error;
 
-  Future<void> _sendRequest() async {
+  Future<void> _sendRequest(ServiceRequestDraft draft) async {
     setState(() {
       _isSaving = true;
       _error = null;
@@ -28,9 +29,12 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
         Navigator.of(context).pushNamed(AppRoutes.auth);
         return;
       }
-      await _serviceRequestsApi.createPlumbingRequest();
+      final requestId = await _serviceRequestsApi.createRequest(draft);
       if (!mounted) return;
-      Navigator.of(context).pushNamed(AppRoutes.bookingSuccess);
+      Navigator.of(context).pushNamed(
+        AppRoutes.bookingSuccess,
+        arguments: draft.copyWith(requestId: requestId),
+      );
     } catch (_) {
       setState(() => _error = 'No se pudo guardar la solicitud');
     } finally {
@@ -42,6 +46,9 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final draft =
+        ModalRoute.of(context)?.settings.arguments as ServiceRequestDraft?;
+
     return BrandedScaffold(
       child: SingleChildScrollView(
         child: Column(
@@ -71,9 +78,15 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            const _SummaryCard(),
+            if (draft == null)
+              const _MissingDraftCard()
+            else
+              _SummaryCard(draft: draft),
             const SizedBox(height: 18),
-            const _NotesBox(),
+            _NotesBox(
+              description: draft?.description ??
+                  'Solicitud de ${draft?.categoryName ?? 'servicio'} creada desde la app.',
+            ),
             if (_error != null) ...[
               const SizedBox(height: 14),
               Text(
@@ -85,12 +98,14 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
               ),
             ],
             const SizedBox(height: 24),
-            DemoButton(
+            AppButton(
               label: _isSaving ? 'GUARDANDO...' : 'ENVIAR SOLICITUD',
-              onPressed: _isSaving ? () {} : _sendRequest,
+              onPressed: _isSaving || draft == null
+                  ? () {}
+                  : () => _sendRequest(draft),
             ),
             const SizedBox(height: 14),
-            DemoButton(
+            AppButton(
               label: 'CAMBIAR PROFESIONAL',
               outlined: true,
               onPressed: () => Navigator.of(context).pop(),
@@ -103,10 +118,16 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
 }
 
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard();
+  const _SummaryCard({required this.draft});
+
+  final ServiceRequestDraft draft;
 
   @override
   Widget build(BuildContext context) {
+    final price = draft.estimatedPrice == null
+        ? 'Por cotizar'
+        : '\$${draft.estimatedPrice!.toStringAsFixed(2)}';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -115,36 +136,38 @@ class _SummaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppTheme.yellow.withValues(alpha: 0.45)),
       ),
-      child: const Column(
+      child: Column(
         children: [
           _SummaryRow(
-            icon: Icons.plumbing_rounded,
+            icon: Icons.handyman_rounded,
             label: 'Servicio',
-            value: 'Plomería',
+            value: draft.categoryName,
           ),
-          Divider(color: Color(0xFF383838), height: 28),
+          const Divider(color: Color(0xFF383838), height: 28),
           _SummaryRow(
             icon: Icons.person_rounded,
             label: 'Profesional',
-            value: 'Carlos M. · 4.9',
+            value: draft.professionalName == null
+                ? 'Por asignar'
+                : '${draft.professionalName} · ${draft.professionalRating ?? '0'}',
           ),
-          Divider(color: Color(0xFF383838), height: 28),
-          _SummaryRow(
+          const Divider(color: Color(0xFF383838), height: 28),
+          const _SummaryRow(
             icon: Icons.location_on_rounded,
             label: 'Ubicación',
-            value: 'A 1.2 km de tu punto',
+            value: 'Ubicación actual del cliente',
           ),
-          Divider(color: Color(0xFF383838), height: 28),
-          _SummaryRow(
+          const Divider(color: Color(0xFF383838), height: 28),
+          const _SummaryRow(
             icon: Icons.schedule_rounded,
             label: 'Llegada estimada',
-            value: '8 min',
+            value: 'Según disponibilidad',
           ),
-          Divider(color: Color(0xFF383838), height: 28),
+          const Divider(color: Color(0xFF383838), height: 28),
           _SummaryRow(
             icon: Icons.payments_rounded,
             label: 'Valor estimado',
-            value: r'$28,00',
+            value: price,
             highlight: true,
           ),
         ],
@@ -204,7 +227,9 @@ class _SummaryRow extends StatelessWidget {
 }
 
 class _NotesBox extends StatelessWidget {
-  const _NotesBox();
+  const _NotesBox({required this.description});
+
+  final String description;
 
   @override
   Widget build(BuildContext context) {
@@ -215,10 +240,10 @@ class _NotesBox extends StatelessWidget {
         color: const Color(0xFF22221F),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Detalle para el profesional',
             style: TextStyle(
               color: Colors.white,
@@ -227,10 +252,10 @@ class _NotesBox extends StatelessWidget {
               letterSpacing: 0,
             ),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Text(
-            'Fuga debajo del lavamanos. Requiere revisión de tubería y llave de paso.',
-            style: TextStyle(
+            description,
+            style: const TextStyle(
               color: AppTheme.mutedText,
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -239,6 +264,33 @@ class _NotesBox extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MissingDraftCard extends StatelessWidget {
+  const _MissingDraftCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF181816),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFFF5A52)),
+      ),
+      child: const Text(
+        'Selecciona una categoría y un profesional antes de enviar la solicitud.',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 15,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0,
+        ),
       ),
     );
   }

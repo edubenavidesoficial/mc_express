@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mc_express/core/routes/app_routes.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/branded_scaffold.dart';
+import 'package:mc_express/features/booking/data/service_request_draft.dart';
 import 'package:mc_express/features/search/data/professionals_api.dart';
 
 class ProfessionalsScreen extends StatefulWidget {
@@ -14,68 +15,77 @@ class ProfessionalsScreen extends StatefulWidget {
 class _ProfessionalsScreenState extends State<ProfessionalsScreen> {
   final _professionalsApi = ProfessionalsApi();
   List<ProfessionalDto> _professionals = const [];
+  ProfessionalDto? _selectedProfessional;
+  ServiceRequestDraft? _draft;
+  String _query = '';
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _loadProfessionals();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final arguments = ModalRoute.of(context)?.settings.arguments;
+      if (arguments is ServiceRequestDraft) {
+        _draft = arguments;
+        _query = arguments.description ?? '';
+      }
+      if (arguments is String) {
+        _query = arguments;
+      }
+      _loadProfessionals();
+    });
   }
 
   Future<void> _loadProfessionals() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
-      final professionals = await _professionalsApi.list(categoryId: 3);
+      final professionals = await _professionalsApi.list(
+        categoryId: _draft?.categoryId,
+      );
       if (!mounted) return;
       setState(() {
         _professionals = professionals;
+        _selectedProfessional = professionals.isEmpty ? null : professionals.first;
       });
-    } catch (_) {
-      // Keep demo professionals visible if the API is not available yet.
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = 'No se pudieron cargar profesionales.');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
+  }
+
+  void _openSelectedProfessional() {
+    final professional = _selectedProfessional;
+    if (professional == null) return;
+    final draft = (_draft ??
+            ServiceRequestDraft(
+              categoryId: professional.categoryId,
+              categoryName: professional.category,
+            ))
+        .copyWith(
+      professionalId: professional.id,
+      professionalName: professional.fullName,
+      professionalRating: professional.rating,
+      description: _query.trim().isEmpty
+          ? 'Solicitud de ${professional.category} creada desde la app.'
+          : _query.trim(),
+      estimatedPrice: double.tryParse(professional.basePrice),
+    );
+    Navigator.of(context).pushNamed(
+      AppRoutes.professionalProfile,
+      arguments: draft,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final cards = _professionals.isEmpty
-        ? const [
-            _ProfessionalCard(
-              name: 'Carlos M.',
-              trade: 'Plomero certificado',
-              rating: '4.9',
-              distance: '1.2 km',
-              eta: '8 min',
-              price: r'$28,00',
-              selected: true,
-            ),
-            _ProfessionalCard(
-              name: 'Miguel A.',
-              trade: 'Instalaciones y fugas',
-              rating: '4.8',
-              distance: '1.7 km',
-              eta: '12 min',
-              price: r'$32,00',
-            ),
-            _ProfessionalCard(
-              name: 'José R.',
-              trade: 'Emergencias 24/7',
-              rating: '4.7',
-              distance: '2.4 km',
-              eta: '16 min',
-              price: r'$35,00',
-            ),
-          ]
-        : [
-            for (final professional in _professionals)
-              _ProfessionalCard(
-                name: professional.fullName,
-                trade: professional.category,
-                rating: professional.rating,
-                distance: 'Cerca',
-                eta: 'Disponible',
-                price: '\$${professional.basePrice}',
-                selected: professional == _professionals.first,
-              ),
-          ];
-
     return BrandedScaffold(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,8 +104,10 @@ class _ProfessionalsScreenState extends State<ProfessionalsScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Plomeros disponibles para atender ahora',
+          Text(
+            _draft == null
+                ? 'Profesionales disponibles para atender ahora'
+                : '${_draft!.categoryName} disponibles para atender ahora',
             style: TextStyle(
               color: AppTheme.mutedText,
               fontSize: 16,
@@ -104,19 +116,125 @@ class _ProfessionalsScreenState extends State<ProfessionalsScreen> {
             ),
           ),
           const SizedBox(height: 18),
+          _SearchBox(
+            initialValue: _query,
+            onChanged: (value) => setState(() => _query = value),
+          ),
+          const SizedBox(height: 12),
           const _FilterBar(),
           const SizedBox(height: 18),
           Expanded(
-            child: ListView(children: cards),
+            child: _ProfessionalsBody(
+              isLoading: _isLoading,
+              error: _error,
+              professionals: _professionals,
+              query: _query,
+              selectedProfessional: _selectedProfessional,
+              onRetry: _loadProfessionals,
+              onSelect: (professional) {
+                setState(() => _selectedProfessional = professional);
+              },
+            ),
           ),
           const SizedBox(height: 12),
-          DemoButton(
-            label: 'CONTINUAR CON CARLOS',
-            onPressed: () {
-              Navigator.of(context).pushNamed(AppRoutes.professionalProfile);
-            },
+          AppButton(
+            label: _selectedProfessional == null
+                ? 'SELECCIONA UN PROFESIONAL'
+                : 'CONTINUAR CON ${_selectedProfessional!.fullName.toUpperCase()}',
+            onPressed: _openSelectedProfessional,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProfessionalsBody extends StatelessWidget {
+  const _ProfessionalsBody({
+    required this.isLoading,
+    required this.error,
+    required this.professionals,
+    required this.query,
+    required this.selectedProfessional,
+    required this.onRetry,
+    required this.onSelect,
+  });
+
+  final bool isLoading;
+  final String? error;
+  final List<ProfessionalDto> professionals;
+  final String query;
+  final ProfessionalDto? selectedProfessional;
+  final VoidCallback onRetry;
+  final ValueChanged<ProfessionalDto> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppTheme.yellow),
+      );
+    }
+    if (error != null) {
+      return _StateMessage(message: error!, actionLabel: 'Reintentar', onTap: onRetry);
+    }
+    final filtered = professionals.where((professional) {
+      final cleanQuery = query.trim().toLowerCase();
+      if (cleanQuery.isEmpty) return true;
+      return professional.fullName.toLowerCase().contains(cleanQuery) ||
+          professional.category.toLowerCase().contains(cleanQuery);
+    }).toList();
+
+    if (professionals.isEmpty || filtered.isEmpty) {
+      return const _StateMessage(
+        message: 'No hay profesionales disponibles para esta búsqueda.',
+      );
+    }
+
+    return ListView(
+      children: [
+        for (final professional in filtered)
+          _ProfessionalCard(
+            name: professional.fullName,
+            trade: professional.category,
+            rating: professional.rating,
+            distance: 'Cerca',
+            eta: 'Disponible',
+            price: '\$${professional.basePrice}',
+            selected: professional.id == selectedProfessional?.id,
+            onTap: () => onSelect(professional),
+          ),
+      ],
+    );
+  }
+}
+
+class _SearchBox extends StatelessWidget {
+  const _SearchBox({required this.initialValue, required this.onChanged});
+
+  final String initialValue;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      initialValue: initialValue,
+      onChanged: onChanged,
+      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+      decoration: InputDecoration(
+        hintText: 'Buscar por servicio o profesional',
+        hintStyle: const TextStyle(color: AppTheme.mutedText),
+        prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.yellow),
+        filled: true,
+        fillColor: const Color(0xFF181816),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppTheme.yellow, width: 2),
+        ),
       ),
     );
   }
@@ -184,6 +302,7 @@ class _ProfessionalCard extends StatelessWidget {
     required this.eta,
     required this.price,
     this.selected = false,
+    required this.onTap,
   });
 
   final String name;
@@ -193,13 +312,12 @@ class _ProfessionalCard extends StatelessWidget {
   final String eta;
   final String price;
   final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: selected
-          ? () => Navigator.of(context).pushNamed(AppRoutes.professionalProfile)
-          : null,
+      onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
@@ -291,6 +409,48 @@ class _ProfessionalCard extends StatelessWidget {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StateMessage extends StatelessWidget {
+  const _StateMessage({required this.message, this.actionLabel, this.onTap});
+
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFF181816),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+            if (actionLabel != null && onTap != null) ...[
+              const SizedBox(height: 10),
+              TextButton(onPressed: onTap, child: Text(actionLabel!)),
+            ],
           ],
         ),
       ),

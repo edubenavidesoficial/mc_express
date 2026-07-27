@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/branded_scaffold.dart';
+import 'package:mc_express/features/booking/data/service_requests_api.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
+
+  @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  final _api = ServiceRequestsApi();
 
   @override
   Widget build(BuildContext context) {
@@ -25,54 +33,51 @@ class HistoryScreen extends StatelessWidget {
           ),
           const SizedBox(height: 28),
           Expanded(
-            child: ListView(
-              children: const [
-                Text(
-                  'Historial de Recargas',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0,
-                  ),
-                ),
-                SizedBox(height: 18),
-                _HistoryCard(
-                  amount: r'$20.00',
-                  method: 'Tarjeta de Crédito',
-                  status: 'Verificado',
-                  statusColor: AppTheme.yellow,
-                  icon: Icons.verified_rounded,
-                ),
-                _HistoryCard(
-                  amount: r'$20.00',
-                  method: 'Tarjeta de Crédito',
-                  status: 'Completado',
-                  statusColor: Color(0xFF42D268),
-                ),
-                _HistoryCard(
-                  amount: r'$20.00',
-                  method: 'Tarjeta de Crédito',
-                  status: 'Pendiente',
-                  statusColor: Color(0xFFFF4545),
-                ),
-                _HistoryCard(
-                  amount: r'$20.00',
-                  method: 'Tarjeta de Crédito',
-                  status: 'Pendiente',
-                  statusColor: Color(0xFFFF4545),
-                ),
-                _HistoryCard(
-                  amount: r'$20.00',
-                  method: 'Tarjeta de Crédito',
-                  status: '',
-                  statusColor: AppTheme.yellow,
-                  icon: Icons.keyboard_arrow_down_rounded,
-                ),
-              ],
+            child: FutureBuilder<List<WalletTransactionDto>>(
+              future: _api.walletTransactions(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppTheme.yellow),
+                  );
+                }
+                final items = snapshot.data ?? const [];
+                if (items.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'Sin movimientos registrados',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                  );
+                }
+                return ListView(
+                  children: [
+                    const Text(
+                      'Historial de cuenta',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    for (final item in items)
+                      _HistoryCard(
+                        amount: '\$${item.amount.toStringAsFixed(2)}',
+                        method: item.type == 'debit' ? 'Pago de servicio' : 'Recarga de cuenta',
+                        status: item.status,
+                        date: item.createdAt,
+                        statusColor: item.type == 'debit'
+                            ? const Color(0xFFFF4545)
+                            : const Color(0xFF42D268),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
-          const DemoBottomNav(currentIndex: 2),
+          const AppBottomNav(currentIndex: 2),
         ],
       ),
     );
@@ -84,15 +89,15 @@ class _HistoryCard extends StatelessWidget {
     required this.amount,
     required this.method,
     required this.status,
+    required this.date,
     required this.statusColor,
-    this.icon,
   });
 
   final String amount;
   final String method;
   final String status;
+  final String date;
   final Color statusColor;
-  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -109,9 +114,9 @@ class _HistoryCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Hoy, 15:30',
-                  style: TextStyle(
+                Text(
+                  date.split('T').first,
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
@@ -155,29 +160,21 @@ class _HistoryCard extends StatelessWidget {
               ],
             ),
             alignment: Alignment.center,
-            child: icon == null
-                ? FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        status,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0,
-                        ),
-                      ),
-                    ),
-                  )
-                : Icon(
-                    icon,
-                    color: statusColor == AppTheme.yellow
-                        ? AppTheme.black
-                        : Colors.white,
-                    size: 42,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  status,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0,
                   ),
+                ),
+              ),
+            ),
           ),
         ],
       ),

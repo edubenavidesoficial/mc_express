@@ -2,9 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:mc_express/core/routes/app_routes.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/branded_scaffold.dart';
+import 'package:mc_express/features/booking/data/service_requests_api.dart';
 
-class RechargeScreen extends StatelessWidget {
+class RechargeScreen extends StatefulWidget {
   const RechargeScreen({super.key});
+
+  @override
+  State<RechargeScreen> createState() => _RechargeScreenState();
+}
+
+class _RechargeScreenState extends State<RechargeScreen> {
+  final _api = ServiceRequestsApi();
+  late Future<double> _balanceFuture;
+  double _amount = 20;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _balanceFuture = _api.walletBalance();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,15 +47,21 @@ class RechargeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const Center(
-              child: Text(
-                r'$45,00',
-                style: TextStyle(
-                  color: AppTheme.yellow,
-                  fontSize: 60,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0,
-                ),
+            Center(
+              child: FutureBuilder<double>(
+                future: _balanceFuture,
+                builder: (context, snapshot) {
+                  final balance = snapshot.data ?? 0;
+                  return Text(
+                    '\$${balance.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      color: AppTheme.yellow,
+                      fontSize: 60,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0,
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 58),
@@ -54,32 +77,40 @@ class RechargeScreen extends StatelessWidget {
             const SizedBox(height: 22),
             const _PaymentMethodsBox(),
             const SizedBox(height: 24),
-            const _RechargeAmountBox(),
+            _RechargeAmountBox(amount: _amount),
             const SizedBox(height: 24),
-            const Row(
+            Row(
               children: [
-                Expanded(child: _AmountChip(label: r'$20')),
-                SizedBox(width: 14),
-                Expanded(child: _AmountChip(label: r'$50')),
-                SizedBox(width: 14),
+                Expanded(child: _AmountChip(amount: 20, selected: _amount == 20, onTap: _selectAmount)),
+                const SizedBox(width: 14),
+                Expanded(child: _AmountChip(amount: 50, selected: _amount == 50, onTap: _selectAmount)),
+                const SizedBox(width: 14),
                 Expanded(
                   flex: 2,
-                  child: _AmountChip(label: r'$100', selected: true),
+                  child: _AmountChip(amount: 100, selected: _amount == 100, onTap: _selectAmount),
                 ),
               ],
             ),
             const SizedBox(height: 42),
-            DemoButton(
-              label: 'CONFIRMAR RECARGA',
-              onPressed: () {
-                Navigator.of(context).pushNamed(AppRoutes.history);
+            AppButton(
+              label: _saving ? 'GUARDANDO...' : 'CONFIRMAR RECARGA',
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                setState(() => _saving = true);
+                await _api.rechargeWallet(_amount);
+                if (!mounted) return;
+                navigator.pushNamed(AppRoutes.history);
               },
             ),
-            const DemoBottomNav(currentIndex: 1),
+            const AppBottomNav(currentIndex: 1),
           ],
         ),
       ),
     );
+  }
+
+  void _selectAmount(double value) {
+    setState(() => _amount = value);
   }
 }
 
@@ -195,7 +226,9 @@ class _MethodItem extends StatelessWidget {
 }
 
 class _RechargeAmountBox extends StatelessWidget {
-  const _RechargeAmountBox();
+  const _RechargeAmountBox({required this.amount});
+
+  final double amount;
 
   @override
   Widget build(BuildContext context) {
@@ -209,11 +242,11 @@ class _RechargeAmountBox extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
       ),
       alignment: Alignment.centerLeft,
-      child: const FittedBox(
+      child: FittedBox(
         fit: BoxFit.scaleDown,
         child: Text(
-          r'Monto a recargar: $ [____]',
-          style: TextStyle(
+          'Monto a recargar: \$${amount.toStringAsFixed(2)}',
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 24,
             fontWeight: FontWeight.w500,
@@ -226,27 +259,36 @@ class _RechargeAmountBox extends StatelessWidget {
 }
 
 class _AmountChip extends StatelessWidget {
-  const _AmountChip({required this.label, this.selected = false});
+  const _AmountChip({
+    required this.amount,
+    required this.selected,
+    required this.onTap,
+  });
 
-  final String label;
+  final double amount;
   final bool selected;
+  final ValueChanged<double> onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 66,
-      decoration: BoxDecoration(
-        color: selected ? AppTheme.yellow : const Color(0xFF20201D),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        label,
-        style: TextStyle(
-          color: selected ? AppTheme.black : AppTheme.yellow,
-          fontSize: 24,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 0,
+    return InkWell(
+      onTap: () => onTap(amount),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        height: 66,
+        decoration: BoxDecoration(
+          color: selected ? AppTheme.yellow : const Color(0xFF20201D),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          '\$${amount.toStringAsFixed(0)}',
+          style: TextStyle(
+            color: selected ? AppTheme.black : AppTheme.yellow,
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0,
+          ),
         ),
       ),
     );
