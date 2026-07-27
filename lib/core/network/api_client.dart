@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:mc_express/core/config/app_config.dart';
@@ -29,17 +31,40 @@ class ApiClient {
   }
 
   Future<dynamic> get(String path, {Map<String, String?> query = const {}}) async {
-    final response = await _client.get(_uri(path, query), headers: await _headers());
-    return _decode(response);
+    return _send(
+      () async => _client.get(_uri(path, query), headers: await _headers()),
+    );
   }
 
   Future<dynamic> post(String path, Map<String, dynamic> body) async {
-    final response = await _client.post(
-      _uri(path),
-      headers: await _headers(),
-      body: jsonEncode(body),
+    return _send(
+      () async => _client.post(
+        _uri(path),
+        headers: await _headers(),
+        body: jsonEncode(body),
+      ),
     );
-    return _decode(response);
+  }
+
+  Future<dynamic> _send(Future<http.Response> Function() request) async {
+    try {
+      final response = await request().timeout(const Duration(seconds: 20));
+      return _decode(response);
+    } on SocketException {
+      throw const ApiException(
+        'Sin conexión a internet o el teléfono no puede llegar al servidor.',
+      );
+    } on HandshakeException {
+      throw const ApiException('No se pudo validar el certificado del servidor.');
+    } on http.ClientException catch (error) {
+      throw ApiException('No se pudo conectar con el servidor: ${error.message}');
+    } on FormatException {
+      throw const ApiException('El servidor respondió con un formato no válido.');
+    } on HttpException {
+      throw const ApiException('No se pudo completar la conexión con el servidor.');
+    } on TimeoutException {
+      throw const ApiException('El servidor tardó demasiado en responder.');
+    }
   }
 
   dynamic _decode(http.Response response) {
