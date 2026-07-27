@@ -260,6 +260,16 @@ class AppBottomNav extends StatelessWidget {
               }
             },
           ),
+          _BottomNavItem(
+            icon: Icons.person_rounded,
+            label: 'Cuenta',
+            selected: currentIndex == 3,
+            onTap: () {
+              if (currentIndex != 3) {
+                Navigator.of(context).pushNamed('/account');
+              }
+            },
+          ),
         ],
       ),
     );

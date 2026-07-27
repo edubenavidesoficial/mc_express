@@ -10,6 +10,7 @@ import 'package:mc_express/features/booking/presentation/service_payment_screen.
 import 'package:mc_express/features/booking/presentation/tracking_screen.dart';
 import 'package:mc_express/features/home/presentation/home_screen.dart';
 import 'package:mc_express/features/professional/presentation/professional_profile_screen.dart';
+import 'package:mc_express/features/profile/presentation/account_screen.dart';
 import 'package:mc_express/features/profile/presentation/history_screen.dart';
 import 'package:mc_express/features/search/presentation/professionals_screen.dart';
 import 'package:mc_express/features/splash/presentation/splash_screen.dart';
@@ -31,6 +32,7 @@ class AppRoutes {
   static const String recharge = '/recharge';
   static const String rating = '/rating';
   static const String history = '/history';
+  static const String account = '/account';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -48,6 +50,7 @@ class AppRoutes {
       recharge: (_) => const RechargeScreen(),
       rating: (_) => const RatingScreen(),
       history: (_) => const HistoryScreen(),
+      account: (_) => const AccountScreen(),
     };
   }
 }

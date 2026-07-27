@@ -164,7 +164,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 }
 
-class _AuthField extends StatelessWidget {
+class _AuthField extends StatefulWidget {
   const _AuthField({
     required this.controller,
     required this.label,
@@ -180,20 +180,42 @@ class _AuthField extends StatelessWidget {
   final bool obscureText;
 
   @override
+  State<_AuthField> createState() => _AuthFieldState();
+}
+
+class _AuthFieldState extends State<_AuthField> {
+  late bool _hidden;
+
+  @override
+  void initState() {
+    super.initState();
+    _hidden = widget.obscureText;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
+      controller: widget.controller,
+      keyboardType: widget.keyboardType,
+      obscureText: _hidden,
       style: const TextStyle(
         color: Colors.white,
         fontSize: 16,
         fontWeight: FontWeight.w700,
       ),
       decoration: InputDecoration(
-        labelText: label,
+        labelText: widget.label,
         labelStyle: const TextStyle(color: AppTheme.mutedText),
-        prefixIcon: Icon(icon, color: AppTheme.yellow),
+        prefixIcon: Icon(widget.icon, color: AppTheme.yellow),
+        suffixIcon: widget.obscureText
+            ? IconButton(
+                onPressed: () => setState(() => _hidden = !_hidden),
+                icon: Icon(
+                  _hidden ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                  color: AppTheme.yellow,
+                ),
+              )
+            : null,
         filled: true,
         fillColor: const Color(0xFF181816),
         enabledBorder: OutlineInputBorder(

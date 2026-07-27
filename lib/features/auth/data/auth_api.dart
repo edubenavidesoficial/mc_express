@@ -38,6 +38,9 @@ class AuthApi {
       token: data['access_token'].toString(),
       userId: user['id'] as int,
       userName: user['name'].toString(),
+      userPhone: user['phone']?.toString(),
+      userEmail: user['email']?.toString(),
+      userRole: user['role']?.toString(),
     );
   }
 }

@@ -14,8 +14,15 @@ class RatingScreen extends StatefulWidget {
 
 class _RatingScreenState extends State<RatingScreen> {
   final _api = ServiceRequestsApi();
+  final _commentController = TextEditingController();
   int _rating = 5;
   bool _saving = false;
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,14 +89,18 @@ class _RatingScreenState extends State<RatingScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.topLeft,
-            child: Text(
-              'Tu calificación se guardará en el historial del servicio.',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.72),
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                height: 1.3,
-                letterSpacing: 0,
+            child: TextField(
+              controller: _commentController,
+              maxLines: 4,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: 'Escribe un comentario para ayudar a otros usuarios.',
+                hintStyle: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.62),
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0,
+                ),
               ),
             ),
           ),
@@ -104,7 +115,9 @@ class _RatingScreenState extends State<RatingScreen> {
                   requestId: draft!.requestId!,
                   professionalId: draft.professionalId!,
                   rating: _rating,
-                  comment: 'Calificación enviada desde la app',
+                  comment: _commentController.text.trim().isEmpty
+                      ? 'Calificación enviada desde la app'
+                      : _commentController.text.trim(),
                 );
               }
               if (!mounted) return;
