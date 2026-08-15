@@ -68,10 +68,9 @@ class _QuoteRequestScreenState extends State<QuoteRequestScreen> {
                   _serviceController.text.trim(),
                   _descriptionController.text.trim(),
                 ].where((value) => value.isNotEmpty).join(' - ');
-                Navigator.of(context).pushNamed(
-                  AppRoutes.professionals,
-                  arguments: query,
-                );
+                Navigator.of(
+                  context,
+                ).pushNamed(AppRoutes.professionals, arguments: query);
               },
             ),
           ],

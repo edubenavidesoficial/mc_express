@@ -81,13 +81,29 @@ class _RechargeScreenState extends State<RechargeScreen> {
             const SizedBox(height: 24),
             Row(
               children: [
-                Expanded(child: _AmountChip(amount: 20, selected: _amount == 20, onTap: _selectAmount)),
+                Expanded(
+                  child: _AmountChip(
+                    amount: 20,
+                    selected: _amount == 20,
+                    onTap: _selectAmount,
+                  ),
+                ),
                 const SizedBox(width: 14),
-                Expanded(child: _AmountChip(amount: 50, selected: _amount == 50, onTap: _selectAmount)),
+                Expanded(
+                  child: _AmountChip(
+                    amount: 50,
+                    selected: _amount == 50,
+                    onTap: _selectAmount,
+                  ),
+                ),
                 const SizedBox(width: 14),
                 Expanded(
                   flex: 2,
-                  child: _AmountChip(amount: 100, selected: _amount == 100, onTap: _selectAmount),
+                  child: _AmountChip(
+                    amount: 100,
+                    selected: _amount == 100,
+                    onTap: _selectAmount,
+                  ),
                 ),
               ],
             ),

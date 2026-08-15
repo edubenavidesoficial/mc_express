@@ -1,11 +1,7 @@
 import 'package:mc_express/core/network/api_client.dart';
 
 class CategoryDto {
-  const CategoryDto({
-    required this.id,
-    required this.name,
-    this.icon,
-  });
+  const CategoryDto({required this.id, required this.name, this.icon});
 
   final int id;
   final String name;
@@ -65,10 +61,12 @@ class ProfessionalsApi {
   }
 
   Future<List<ProfessionalDto>> list({int? categoryId}) async {
-    final data = await _client.get(
-      '/services/professionals',
-      query: {'category_id': categoryId?.toString()},
-    ) as List<dynamic>;
+    final data =
+        await _client.get(
+              '/services/professionals',
+              query: {'category_id': categoryId?.toString()},
+            )
+            as List<dynamic>;
     return data
         .map((item) => ProfessionalDto.fromJson(item as Map<String, dynamic>))
         .toList();

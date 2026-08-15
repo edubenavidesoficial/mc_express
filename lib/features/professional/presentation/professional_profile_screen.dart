@@ -31,10 +31,9 @@ class ProfessionalProfileScreen extends StatelessWidget {
             AppButton(
               label: 'SOLICITAR A ${professionalName.toUpperCase()}',
               onPressed: () {
-                Navigator.of(context).pushNamed(
-                  AppRoutes.bookingSummary,
-                  arguments: draft,
-                );
+                Navigator.of(
+                  context,
+                ).pushNamed(AppRoutes.bookingSummary, arguments: draft);
               },
             ),
           ],
@@ -103,11 +102,17 @@ class _StatsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: _StatBox(label: 'Rating', value: rating)),
+        Expanded(
+          child: _StatBox(label: 'Rating', value: rating),
+        ),
         const SizedBox(width: 10),
-        const Expanded(child: _StatBox(label: 'Estado', value: 'Activo')),
+        const Expanded(
+          child: _StatBox(label: 'Estado', value: 'Activo'),
+        ),
         const SizedBox(width: 10),
-        const Expanded(child: _StatBox(label: 'Llegada', value: 'Cerca')),
+        const Expanded(
+          child: _StatBox(label: 'Llegada', value: 'Cerca'),
+        ),
       ],
     );
   }

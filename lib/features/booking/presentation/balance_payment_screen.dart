@@ -88,12 +88,11 @@ class _BalancePaymentScreenState extends State<BalancePaymentScreen> {
                     amount: amount,
                   );
                   if (!mounted) return;
-                  navigator.pushNamed(
-                    AppRoutes.rating,
-                    arguments: draft,
-                  );
+                  navigator.pushNamed(AppRoutes.rating, arguments: draft);
                 } catch (_) {
-                  setState(() => _error = 'Saldo insuficiente. Recarga tu cuenta.');
+                  setState(
+                    () => _error = 'Saldo insuficiente. Recarga tu cuenta.',
+                  );
                 } finally {
                   if (mounted) setState(() => _saving = false);
                 }
@@ -167,11 +166,17 @@ class _ServiceDetail extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 22),
-        _DetailLine(label: 'Monto total:', value: '\$${amount.toStringAsFixed(2)}'),
+        _DetailLine(
+          label: 'Monto total:',
+          value: '\$${amount.toStringAsFixed(2)}',
+        ),
         const SizedBox(height: 16),
         const _DetailLine(label: 'Método:', value: 'Saldo'),
         const SizedBox(height: 16),
-        _DetailLine(label: 'Total a descontar:', value: '\$${amount.toStringAsFixed(2)}'),
+        _DetailLine(
+          label: 'Total a descontar:',
+          value: '\$${amount.toStringAsFixed(2)}',
+        ),
         const SizedBox(height: 22),
         const Divider(color: Color(0xFF494949)),
       ],
@@ -189,10 +194,7 @@ class _DetailLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Text(
-          '•',
-          style: TextStyle(color: Colors.white, fontSize: 26),
-        ),
+        const Text('•', style: TextStyle(color: Colors.white, fontSize: 26)),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
@@ -228,7 +230,11 @@ class _DiscountNote extends StatelessWidget {
     return const Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.check_circle_outline_rounded, color: AppTheme.yellow, size: 18),
+        Icon(
+          Icons.check_circle_outline_rounded,
+          color: AppTheme.yellow,
+          size: 18,
+        ),
         SizedBox(width: 8),
         Flexible(
           child: Text(

@@ -71,10 +71,9 @@ class BookingSuccessScreen extends StatelessWidget {
           AppButton(
             label: 'VER SEGUIMIENTO',
             onPressed: () {
-              Navigator.of(context).pushReplacementNamed(
-                AppRoutes.tracking,
-                arguments: draft,
-              );
+              Navigator.of(
+                context,
+              ).pushReplacementNamed(AppRoutes.tracking, arguments: draft);
             },
           ),
           const SizedBox(height: 14),
@@ -82,10 +81,9 @@ class BookingSuccessScreen extends StatelessWidget {
             label: 'VOLVER AL INICIO',
             outlined: true,
             onPressed: () {
-              Navigator.of(context).pushNamedAndRemoveUntil(
-                AppRoutes.home,
-                (route) => false,
-              );
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
             },
           ),
         ],
@@ -111,7 +109,10 @@ class _NotificationCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.notifications_active_rounded, color: AppTheme.yellow),
+          const Icon(
+            Icons.notifications_active_rounded,
+            color: AppTheme.yellow,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -151,7 +152,10 @@ class _StatusPanel extends StatelessWidget {
           const SizedBox(height: 14),
           const _StatusLine(label: 'Ubicación', value: 'Registrada'),
           const SizedBox(height: 14),
-          _StatusLine(label: 'Código de servicio', value: 'MC-${requestId ?? '--'}'),
+          _StatusLine(
+            label: 'Código de servicio',
+            value: 'MC-${requestId ?? '--'}',
+          ),
         ],
       ),
     );

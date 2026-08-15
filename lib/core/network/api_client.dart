@@ -30,7 +30,10 @@ class ApiClient {
     };
   }
 
-  Future<dynamic> get(String path, {Map<String, String?> query = const {}}) async {
+  Future<dynamic> get(
+    String path, {
+    Map<String, String?> query = const {},
+  }) async {
     return _send(
       () async => _client.get(_uri(path, query), headers: await _headers()),
     );
@@ -55,13 +58,21 @@ class ApiClient {
         'Sin conexión a internet o el teléfono no puede llegar al servidor.',
       );
     } on HandshakeException {
-      throw const ApiException('No se pudo validar el certificado del servidor.');
+      throw const ApiException(
+        'No se pudo validar el certificado del servidor.',
+      );
     } on http.ClientException catch (error) {
-      throw ApiException('No se pudo conectar con el servidor: ${error.message}');
+      throw ApiException(
+        'No se pudo conectar con el servidor: ${error.message}',
+      );
     } on FormatException {
-      throw const ApiException('El servidor respondió con un formato no válido.');
+      throw const ApiException(
+        'El servidor respondió con un formato no válido.',
+      );
     } on HttpException {
-      throw const ApiException('No se pudo completar la conexión con el servidor.');
+      throw const ApiException(
+        'No se pudo completar la conexión con el servidor.',
+      );
     } on TimeoutException {
       throw const ApiException('El servidor tardó demasiado en responder.');
     }

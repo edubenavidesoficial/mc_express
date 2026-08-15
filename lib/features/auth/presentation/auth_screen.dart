@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mc_express/core/network/api_exception.dart';
 import 'package:mc_express/core/routes/app_routes.dart';
+import 'package:mc_express/core/security/session_lock_service.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/branded_scaffold.dart';
 import 'package:mc_express/features/auth/data/auth_api.dart';
@@ -52,10 +53,11 @@ class _AuthScreenState extends State<AuthScreen> {
         );
       }
       if (!mounted) return;
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.home,
-        (route) => false,
-      );
+      await _offerSessionLock();
+      if (!mounted) return;
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
     } on ApiException catch (error) {
       setState(() => _error = error.message);
     } catch (_) {
@@ -64,6 +66,40 @@ class _AuthScreenState extends State<AuthScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _offerSessionLock() async {
+    if (await SessionLockService.instance.isEnabled || !mounted) return;
+    final enable = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF171716),
+        title: const Text(
+          'Guardar acceso seguro',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+        ),
+        content: const Text(
+          'Puedes mantener tu sesión y protegerla con Face ID, huella, rostro o PIN del teléfono cuando esté disponible.',
+          style: TextStyle(
+            color: AppTheme.mutedText,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Después'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Activar'),
+          ),
+        ],
+      ),
+    );
+    if (enable == true) {
+      await SessionLockService.instance.enable();
     }
   }
 
@@ -142,8 +178,8 @@ class _AuthScreenState extends State<AuthScreen> {
               label: _isLoading
                   ? 'CONECTANDO...'
                   : _isRegister
-                      ? 'REGISTRARME'
-                      : 'INGRESAR',
+                  ? 'REGISTRARME'
+                  : 'INGRESAR',
               onPressed: _isLoading ? () {} : _submit,
             ),
             const SizedBox(height: 14),
@@ -211,7 +247,9 @@ class _AuthFieldState extends State<_AuthField> {
             ? IconButton(
                 onPressed: () => setState(() => _hidden = !_hidden),
                 icon: Icon(
-                  _hidden ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                  _hidden
+                      ? Icons.visibility_rounded
+                      : Icons.visibility_off_rounded,
                   color: AppTheme.yellow,
                 ),
               )

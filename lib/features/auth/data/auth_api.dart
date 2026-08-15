@@ -6,14 +6,13 @@ class AuthApi {
 
   final ApiClient _client;
 
-  Future<void> login({
-    required String phone,
-    required String password,
-  }) async {
-    final data = await _client.post('/auth/login', {
-      'phone': phone,
-      'password': password,
-    }) as Map<String, dynamic>;
+  Future<void> login({required String phone, required String password}) async {
+    final data =
+        await _client.post('/auth/login', {
+              'phone': phone,
+              'password': password,
+            })
+            as Map<String, dynamic>;
     await _save(data);
   }
 
@@ -23,12 +22,14 @@ class AuthApi {
     required String password,
     String? email,
   }) async {
-    final data = await _client.post('/auth/register', {
-      'full_name': fullName,
-      'phone': phone,
-      'email': email?.isEmpty ?? true ? null : email,
-      'password': password,
-    }) as Map<String, dynamic>;
+    final data =
+        await _client.post('/auth/register', {
+              'full_name': fullName,
+              'phone': phone,
+              'email': email?.isEmpty ?? true ? null : email,
+              'password': password,
+            })
+            as Map<String, dynamic>;
     await _save(data);
   }
 

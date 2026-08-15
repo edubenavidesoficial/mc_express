@@ -49,7 +49,9 @@ class _ProfessionalsScreenState extends State<ProfessionalsScreen> {
       if (!mounted) return;
       setState(() {
         _professionals = professionals;
-        _selectedProfessional = professionals.isEmpty ? null : professionals.first;
+        _selectedProfessional = professionals.isEmpty
+            ? null
+            : professionals.first;
       });
     } catch (error) {
       if (!mounted) return;
@@ -64,24 +66,24 @@ class _ProfessionalsScreenState extends State<ProfessionalsScreen> {
   void _openSelectedProfessional() {
     final professional = _selectedProfessional;
     if (professional == null) return;
-    final draft = (_draft ??
-            ServiceRequestDraft(
-              categoryId: professional.categoryId,
-              categoryName: professional.category,
-            ))
-        .copyWith(
-      professionalId: professional.id,
-      professionalName: professional.fullName,
-      professionalRating: professional.rating,
-      description: _query.trim().isEmpty
-          ? 'Solicitud de ${professional.category} creada desde la app.'
-          : _query.trim(),
-      estimatedPrice: double.tryParse(professional.basePrice),
-    );
-    Navigator.of(context).pushNamed(
-      AppRoutes.professionalProfile,
-      arguments: draft,
-    );
+    final draft =
+        (_draft ??
+                ServiceRequestDraft(
+                  categoryId: professional.categoryId,
+                  categoryName: professional.category,
+                ))
+            .copyWith(
+              professionalId: professional.id,
+              professionalName: professional.fullName,
+              professionalRating: professional.rating,
+              description: _query.trim().isEmpty
+                  ? 'Solicitud de ${professional.category} creada desde la app.'
+                  : _query.trim(),
+              estimatedPrice: double.tryParse(professional.basePrice),
+            );
+    Navigator.of(
+      context,
+    ).pushNamed(AppRoutes.professionalProfile, arguments: draft);
   }
 
   @override
@@ -176,7 +178,11 @@ class _ProfessionalsBody extends StatelessWidget {
       );
     }
     if (error != null) {
-      return _StateMessage(message: error!, actionLabel: 'Reintentar', onTap: onRetry);
+      return _StateMessage(
+        message: error!,
+        actionLabel: 'Reintentar',
+        onTap: onRetry,
+      );
     }
     final filtered = professionals.where((professional) {
       final cleanQuery = query.trim().toLowerCase();
@@ -272,7 +278,9 @@ class _FilterChip extends StatelessWidget {
           color: active ? AppTheme.yellow : const Color(0xFF181816),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: active ? AppTheme.yellow : Colors.white.withValues(alpha: 0.12),
+            color: active
+                ? AppTheme.yellow
+                : Colors.white.withValues(alpha: 0.12),
           ),
         ),
         alignment: Alignment.center,

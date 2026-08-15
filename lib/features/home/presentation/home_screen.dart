@@ -17,11 +17,7 @@ class HomeScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF050505),
-              Color(0xFF0A0A0A),
-              Color(0xFF000000),
-            ],
+            colors: [Color(0xFF050505), Color(0xFF0A0A0A), Color(0xFF000000)],
           ),
         ),
         child: SafeArea(
@@ -232,7 +228,11 @@ class _ServiceSearchFieldState extends State<_ServiceSearchField> {
           ),
           IconButton(
             onPressed: () => _search(_controller.text),
-            icon: const Icon(Icons.search_rounded, color: AppTheme.black, size: 36),
+            icon: const Icon(
+              Icons.search_rounded,
+              color: AppTheme.black,
+              size: 36,
+            ),
           ),
         ],
       ),
@@ -240,7 +240,9 @@ class _ServiceSearchFieldState extends State<_ServiceSearchField> {
   }
 
   void _search(String value) {
-    Navigator.of(context).pushNamed(AppRoutes.professionals, arguments: value.trim());
+    Navigator.of(
+      context,
+    ).pushNamed(AppRoutes.professionals, arguments: value.trim());
   }
 }
 
@@ -348,10 +350,7 @@ class _CategoryCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF0C0C0C),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: const Color(0xFF3E3E3E),
-            width: 1.8,
-          ),
+          border: Border.all(color: const Color(0xFF3E3E3E), width: 1.8),
           boxShadow: [
             BoxShadow(
               color: Colors.white.withValues(alpha: 0.05),
@@ -408,9 +407,7 @@ class _RequestServiceButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: AppTheme.yellow,
           foregroundColor: AppTheme.black,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           elevation: 0,
         ),
         child: const Row(
@@ -479,10 +476,7 @@ class _ApiMessage extends StatelessWidget {
           ),
           if (onRetry != null) ...[
             const SizedBox(height: 10),
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('Reintentar'),
-            ),
+            TextButton(onPressed: onRetry, child: const Text('Reintentar')),
           ],
         ],
       ),

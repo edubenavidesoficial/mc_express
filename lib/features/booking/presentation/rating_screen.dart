@@ -72,7 +72,9 @@ class _RatingScreenState extends State<RatingScreen> {
                 IconButton(
                   onPressed: () => setState(() => _rating = index),
                   icon: Icon(
-                    index <= _rating ? Icons.star_rounded : Icons.star_border_rounded,
+                    index <= _rating
+                        ? Icons.star_rounded
+                        : Icons.star_border_rounded,
                     color: AppTheme.yellow,
                     size: 44,
                   ),
@@ -92,7 +94,10 @@ class _RatingScreenState extends State<RatingScreen> {
             child: TextField(
               controller: _commentController,
               maxLines: 4,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Escribe un comentario para ayudar a otros usuarios.',

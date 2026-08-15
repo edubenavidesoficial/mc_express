@@ -32,7 +32,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
       final requestId = await _serviceRequestsApi.createRequest(draft);
       if (!mounted) return;
       Navigator.of(context).pushNamed(
-        AppRoutes.bookingSuccess,
+        AppRoutes.serviceOffers,
         arguments: draft.copyWith(requestId: requestId),
       );
     } catch (_) {
@@ -84,7 +84,8 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
               _SummaryCard(draft: draft),
             const SizedBox(height: 18),
             _NotesBox(
-              description: draft?.description ??
+              description:
+                  draft?.description ??
                   'Solicitud de ${draft?.categoryName ?? 'servicio'} creada desde la app.',
             ),
             if (_error != null) ...[

@@ -1,11 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:mc_express/core/constants/app_assets.dart';
 import 'package:mc_express/core/routes/app_routes.dart';
+import 'package:mc_express/core/security/session_lock_service.dart';
+import 'package:mc_express/core/storage/session_store.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/primary_button.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
+
+  Future<void> _continue(BuildContext context) async {
+    final isLoggedIn = await SessionStore.instance.isLoggedIn;
+    if (!context.mounted) return;
+    if (!isLoggedIn) {
+      Navigator.of(context).pushNamed(AppRoutes.auth);
+      return;
+    }
+    final unlocked = await SessionLockService.instance.authenticate();
+    if (!context.mounted) return;
+    if (unlocked) {
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+    } else {
+      Navigator.of(context).pushNamed(AppRoutes.auth);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +74,7 @@ class SplashScreen extends StatelessWidget {
                     PrimaryButton(
                       label: 'Ingresar a MC Express',
                       icon: Icons.login_rounded,
-                      onPressed: () {
-                        Navigator.of(context).pushNamed(AppRoutes.auth);
-                      },
+                      onPressed: () => _continue(context),
                     ),
                     const SizedBox(height: 12),
                     TextButton(

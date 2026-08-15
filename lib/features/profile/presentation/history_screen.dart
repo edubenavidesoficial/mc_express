@@ -65,7 +65,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     for (final item in items)
                       _HistoryCard(
                         amount: '\$${item.amount.toStringAsFixed(2)}',
-                        method: item.type == 'debit' ? 'Pago de servicio' : 'Recarga de cuenta',
+                        method: item.type == 'debit'
+                            ? 'Pago de servicio'
+                            : 'Recarga de cuenta',
                         status: item.status,
                         date: item.createdAt,
                         statusColor: item.type == 'debit'

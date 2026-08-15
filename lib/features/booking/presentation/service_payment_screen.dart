@@ -100,10 +100,9 @@ class _ServicePaymentScreenState extends State<ServicePaymentScreen> {
               label: 'PAGAR CON SALDO',
               outlined: true,
               onPressed: () {
-                Navigator.of(context).pushNamed(
-                  AppRoutes.balancePayment,
-                  arguments: draft,
-                );
+                Navigator.of(
+                  context,
+                ).pushNamed(AppRoutes.balancePayment, arguments: draft);
               },
             ),
             const SizedBox(height: 18),
@@ -120,10 +119,7 @@ class _ServicePaymentScreenState extends State<ServicePaymentScreen> {
                   );
                 }
                 if (!mounted) return;
-                navigator.pushNamed(
-                  AppRoutes.rating,
-                  arguments: draft,
-                );
+                navigator.pushNamed(AppRoutes.rating, arguments: draft);
               },
             ),
             const SizedBox(height: 18),
@@ -131,10 +127,9 @@ class _ServicePaymentScreenState extends State<ServicePaymentScreen> {
               label: 'REGRESAR AL TRABAJO',
               outlined: true,
               onPressed: () {
-                Navigator.of(context).pushNamed(
-                  AppRoutes.tracking,
-                  arguments: draft,
-                );
+                Navigator.of(
+                  context,
+                ).pushNamed(AppRoutes.tracking, arguments: draft);
               },
             ),
           ],

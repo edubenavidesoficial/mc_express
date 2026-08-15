@@ -6,6 +6,8 @@ import 'package:mc_express/features/booking/presentation/booking_summary_screen.
 import 'package:mc_express/features/booking/presentation/quote_request_screen.dart';
 import 'package:mc_express/features/booking/presentation/rating_screen.dart';
 import 'package:mc_express/features/booking/presentation/recharge_screen.dart';
+import 'package:mc_express/features/booking/presentation/service_chat_screen.dart';
+import 'package:mc_express/features/booking/presentation/service_offers_screen.dart';
 import 'package:mc_express/features/booking/presentation/service_payment_screen.dart';
 import 'package:mc_express/features/booking/presentation/tracking_screen.dart';
 import 'package:mc_express/features/home/presentation/home_screen.dart';
@@ -26,6 +28,8 @@ class AppRoutes {
   static const String quoteRequest = '/quote-request';
   static const String bookingSummary = '/booking-summary';
   static const String bookingSuccess = '/booking-success';
+  static const String serviceOffers = '/service-offers';
+  static const String serviceChat = '/service-chat';
   static const String tracking = '/tracking';
   static const String servicePayment = '/service-payment';
   static const String balancePayment = '/balance-payment';
@@ -44,6 +48,8 @@ class AppRoutes {
       quoteRequest: (_) => const QuoteRequestScreen(),
       bookingSummary: (_) => const BookingSummaryScreen(),
       bookingSuccess: (_) => const BookingSuccessScreen(),
+      serviceOffers: (_) => const ServiceOffersScreen(),
+      serviceChat: (_) => const ServiceChatScreen(),
       tracking: (_) => const TrackingScreen(),
       servicePayment: (_) => const ServicePaymentScreen(),
       balancePayment: (_) => const BalancePaymentScreen(),

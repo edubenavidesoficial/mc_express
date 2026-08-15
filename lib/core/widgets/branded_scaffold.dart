@@ -23,11 +23,7 @@ class BrandedScaffold extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF050505),
-              Color(0xFF10100E),
-              Color(0xFF000000),
-            ],
+            colors: [Color(0xFF050505), Color(0xFF10100E), Color(0xFF000000)],
           ),
         ),
         child: Stack(
@@ -233,10 +229,9 @@ class AppBottomNav extends StatelessWidget {
             selected: currentIndex == 0,
             onTap: () {
               if (currentIndex != 0) {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/home',
-                  (route) => false,
-                );
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/home', (route) => false);
               }
             },
           ),

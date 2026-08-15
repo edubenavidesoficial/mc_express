@@ -3,9 +3,138 @@ import 'package:mc_express/core/routes/app_routes.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/branded_scaffold.dart';
 import 'package:mc_express/features/booking/data/service_request_draft.dart';
+import 'package:mc_express/features/booking/data/service_requests_api.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class TrackingScreen extends StatelessWidget {
+class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key});
+
+  @override
+  State<TrackingScreen> createState() => _TrackingScreenState();
+}
+
+class _TrackingScreenState extends State<TrackingScreen> {
+  final _api = ServiceRequestsApi();
+  bool _isCancelling = false;
+
+  Future<void> _callProfessional(ServiceRequestDraft? draft) async {
+    final phone = draft?.professionalPhone;
+    if (phone == null || phone.isEmpty) return;
+    final uri = Uri(scheme: 'tel', path: phone);
+    await launchUrl(uri);
+  }
+
+  Future<void> _cancelWithReason(
+    ServiceRequestDraft? draft,
+    String reason,
+  ) async {
+    if (draft?.requestId == null || _isCancelling) return;
+    setState(() => _isCancelling = true);
+    try {
+      await _api.cancelRequest(requestId: draft!.requestId!, reason: reason);
+      if (!mounted) return;
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+    } catch (_) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo cancelar la solicitud')),
+      );
+    } finally {
+      if (mounted) setState(() => _isCancelling = false);
+    }
+  }
+
+  void _showCancelReasons(ServiceRequestDraft? draft) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final reasons = [
+          'El tiempo de espera es muy largo',
+          'Ubicación o detalle incorrecto',
+          'Quiero cambiar el tipo de servicio',
+          'Solicitud accidental',
+        ];
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        '¿Por qué quieres cancelar?',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    IconButton.filled(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: IconButton.styleFrom(
+                        backgroundColor: const Color(0xFFF4F4F4),
+                        foregroundColor: Colors.black,
+                      ),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4F4F4),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${draft?.professionalName == null ? 'Varios profesionales' : draft!.professionalName} cerca de tu ubicación',
+                    style: const TextStyle(
+                      color: Color(0xFF6F6F6F),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                for (final reason in reasons)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.black,
+                    ),
+                    title: Text(
+                      reason,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => _cancelWithReason(draft, reason),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,62 +195,32 @@ class TrackingScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             _TripInfoCard(draft: draft),
-            const SizedBox(height: 32),
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 58,
-                    child: FilledButton(
-                      onPressed: () {
-                        Navigator.of(context).pushNamed(
-                          AppRoutes.servicePayment,
-                          arguments: draft,
-                        );
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFCFFF00),
-                        foregroundColor: AppTheme.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Ya llegué',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: SizedBox(
-                    height: 58,
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF3B35),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Cancelar',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 18),
+            _ContactActions(
+              enabled: draft?.professionalName != null,
+              onCall: () => _callProfessional(draft),
+              onMessage: () => Navigator.of(
+                context,
+              ).pushNamed(AppRoutes.serviceChat, arguments: draft),
+              onPhoto: () => Navigator.of(
+                context,
+              ).pushNamed(AppRoutes.serviceChat, arguments: draft),
+            ),
+            const SizedBox(height: 24),
+            AppButton(
+              label: 'FINALIZAR SERVICIO',
+              onPressed: () {
+                Navigator.of(
+                  context,
+                ).pushNamed(AppRoutes.servicePayment, arguments: draft);
+              },
+              backgroundColor: const Color(0xFFCFFF00),
+            ),
+            const SizedBox(height: 14),
+            AppButton(
+              label: _isCancelling ? 'CANCELANDO...' : 'CANCELAR',
+              outlined: true,
+              onPressed: () => _showCancelReasons(draft),
             ),
           ],
         ),
@@ -131,7 +230,101 @@ class TrackingScreen extends StatelessWidget {
 
   String _statusLabel(ServiceRequestDraft? draft) {
     if (draft == null) return 'SOLICITUD';
-    return draft.professionalName == null ? 'PENDIENTE' : 'EN PROCESO';
+    return draft.professionalName == null ? 'BUSCANDO' : 'EN CAMINO';
+  }
+}
+
+class _ContactActions extends StatelessWidget {
+  const _ContactActions({
+    required this.enabled,
+    required this.onCall,
+    required this.onMessage,
+    required this.onPhoto,
+  });
+
+  final bool enabled;
+  final VoidCallback onCall;
+  final VoidCallback onMessage;
+  final VoidCallback onPhoto;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = enabled ? AppTheme.yellow : const Color(0xFF40403C);
+    return Row(
+      children: [
+        Expanded(
+          child: _ActionButton(
+            icon: Icons.call_rounded,
+            label: 'Llamar',
+            color: color,
+            onTap: enabled ? onCall : null,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _ActionButton(
+            icon: Icons.chat_bubble_rounded,
+            label: 'Mensaje',
+            color: color,
+            onTap: enabled ? onMessage : null,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _ActionButton(
+            icon: Icons.photo_camera_rounded,
+            label: 'Foto',
+            color: color,
+            onTap: enabled ? onPhoto : null,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        height: 76,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1D1D1A),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.55)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 26),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -199,10 +392,18 @@ class _MapPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     for (double y = 28; y < size.height; y += 28) {
-      canvas.drawLine(Offset(14, y), Offset(size.width - 14, y + 18), roadPaint);
+      canvas.drawLine(
+        Offset(14, y),
+        Offset(size.width - 14, y + 18),
+        roadPaint,
+      );
     }
     for (double x = 22; x < size.width; x += 38) {
-      canvas.drawLine(Offset(x, 16), Offset(x - 40, size.height - 20), roadPaint);
+      canvas.drawLine(
+        Offset(x, 16),
+        Offset(x - 40, size.height - 20),
+        roadPaint,
+      );
     }
 
     final Path route = Path()
@@ -248,9 +449,15 @@ class _TripInfoCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _InfoLine(label: 'Servicio:', value: draft?.categoryName ?? 'Servicio'),
+          _InfoLine(
+            label: 'Servicio:',
+            value: draft?.categoryName ?? 'Servicio',
+          ),
           const SizedBox(height: 16),
-          _InfoLine(label: 'Profesional:', value: draft?.professionalName ?? 'Por asignar'),
+          _InfoLine(
+            label: 'Profesional:',
+            value: draft?.professionalName ?? 'Por asignar',
+          ),
           const SizedBox(height: 16),
           _InfoLine(label: 'Código:', value: 'MC-${draft?.requestId ?? '--'}'),
         ],
