@@ -6,10 +6,13 @@ class AuthApi {
 
   final ApiClient _client;
 
-  Future<void> login({required String phone, required String password}) async {
+  Future<void> login({
+    required String identifier,
+    required String password,
+  }) async {
     final data =
         await _client.post('/auth/login', {
-              'phone': phone,
+              'identifier': identifier,
               'password': password,
             })
             as Map<String, dynamic>;

@@ -21,6 +21,15 @@ class _ProfessionalsScreenState extends State<ProfessionalsScreen> {
   bool _isLoading = true;
   String? _error;
 
+  List<ProfessionalDto> get _filteredProfessionals {
+    final cleanQuery = _query.trim().toLowerCase();
+    if (cleanQuery.isEmpty) return _professionals;
+    return _professionals.where((professional) {
+      return professional.fullName.toLowerCase().contains(cleanQuery) ||
+          professional.category.toLowerCase().contains(cleanQuery);
+    }).toList();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -86,6 +95,28 @@ class _ProfessionalsScreenState extends State<ProfessionalsScreen> {
     ).pushNamed(AppRoutes.professionalProfile, arguments: draft);
   }
 
+  void _requestToAllProfessionals() {
+    final matches = _filteredProfessionals;
+    if (matches.isEmpty) return;
+    final professional = matches.first;
+    final draft =
+        (_draft ??
+                ServiceRequestDraft(
+                  categoryId: professional.categoryId,
+                  categoryName: professional.category,
+                ))
+            .copyWith(
+              professionalId: null,
+              professionalName: null,
+              professionalRating: null,
+              description: _query.trim().isEmpty
+                  ? 'Solicitud de ${professional.category} creada desde la app.'
+                  : _query.trim(),
+              estimatedPrice: double.tryParse(professional.basePrice),
+            );
+    Navigator.of(context).pushNamed(AppRoutes.bookingSummary, arguments: draft);
+  }
+
   @override
   Widget build(BuildContext context) {
     return BrandedScaffold(
@@ -129,8 +160,7 @@ class _ProfessionalsScreenState extends State<ProfessionalsScreen> {
             child: _ProfessionalsBody(
               isLoading: _isLoading,
               error: _error,
-              professionals: _professionals,
-              query: _query,
+              professionals: _filteredProfessionals,
               selectedProfessional: _selectedProfessional,
               onRetry: _loadProfessionals,
               onSelect: (professional) {
@@ -140,10 +170,18 @@ class _ProfessionalsScreenState extends State<ProfessionalsScreen> {
           ),
           const SizedBox(height: 12),
           AppButton(
+            label: _filteredProfessionals.isEmpty
+                ? 'BUSCA UN SERVICIO DISPONIBLE'
+                : 'SOLICITAR AHORA A PROFESIONALES',
+            onPressed: _requestToAllProfessionals,
+          ),
+          const SizedBox(height: 10),
+          AppButton(
             label: _selectedProfessional == null
                 ? 'SELECCIONA UN PROFESIONAL'
                 : 'CONTINUAR CON ${_selectedProfessional!.fullName.toUpperCase()}',
             onPressed: _openSelectedProfessional,
+            outlined: true,
           ),
         ],
       ),
@@ -156,7 +194,6 @@ class _ProfessionalsBody extends StatelessWidget {
     required this.isLoading,
     required this.error,
     required this.professionals,
-    required this.query,
     required this.selectedProfessional,
     required this.onRetry,
     required this.onSelect,
@@ -165,7 +202,6 @@ class _ProfessionalsBody extends StatelessWidget {
   final bool isLoading;
   final String? error;
   final List<ProfessionalDto> professionals;
-  final String query;
   final ProfessionalDto? selectedProfessional;
   final VoidCallback onRetry;
   final ValueChanged<ProfessionalDto> onSelect;
@@ -184,14 +220,7 @@ class _ProfessionalsBody extends StatelessWidget {
         onTap: onRetry,
       );
     }
-    final filtered = professionals.where((professional) {
-      final cleanQuery = query.trim().toLowerCase();
-      if (cleanQuery.isEmpty) return true;
-      return professional.fullName.toLowerCase().contains(cleanQuery) ||
-          professional.category.toLowerCase().contains(cleanQuery);
-    }).toList();
-
-    if (professionals.isEmpty || filtered.isEmpty) {
+    if (professionals.isEmpty) {
       return const _StateMessage(
         message: 'No hay profesionales disponibles para esta búsqueda.',
       );
@@ -199,7 +228,9 @@ class _ProfessionalsBody extends StatelessWidget {
 
     return ListView(
       children: [
-        for (final professional in filtered)
+        const _BroadcastInfoCard(),
+        const SizedBox(height: 12),
+        for (final professional in professionals)
           _ProfessionalCard(
             name: professional.fullName,
             trade: professional.category,
@@ -211,6 +242,42 @@ class _ProfessionalsBody extends StatelessWidget {
             onTap: () => onSelect(professional),
           ),
       ],
+    );
+  }
+}
+
+class _BroadcastInfoCard extends StatelessWidget {
+  const _BroadcastInfoCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.yellow,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Row(
+        children: [
+          Icon(
+            Icons.notifications_active_rounded,
+            color: Colors.black,
+            size: 30,
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Toca “Solicitar ahora” para enviar tu solicitud a todos los profesionales disponibles de este servicio.',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                height: 1.25,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -433,33 +500,35 @@ class _StateMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: const Color(0xFF181816),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0,
+    return SingleChildScrollView(
+      child: Center(
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: const Color(0xFF181816),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                ),
               ),
-            ),
-            if (actionLabel != null && onTap != null) ...[
-              const SizedBox(height: 10),
-              TextButton(onPressed: onTap, child: Text(actionLabel!)),
+              if (actionLabel != null && onTap != null) ...[
+                const SizedBox(height: 10),
+                TextButton(onPressed: onTap, child: Text(actionLabel!)),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

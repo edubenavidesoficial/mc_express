@@ -86,6 +86,12 @@ CREATE TABLE reviews (
   FOREIGN KEY (professional_id) REFERENCES professionals(id)
 ) ENGINE=InnoDB;
 
+CREATE TABLE app_settings (
+  setting_key VARCHAR(80) PRIMARY KEY,
+  setting_value VARCHAR(255) NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 INSERT INTO service_categories (name, icon) VALUES
 ('Albañiles', 'engineering'),
 ('Jardineros', 'leaf'),
@@ -93,3 +99,11 @@ INSERT INTO service_categories (name, icon) VALUES
 ('Electricistas', 'bolt'),
 ('Pintores', 'paint'),
 ('Más', 'more');
+
+INSERT INTO app_settings (setting_key, setting_value) VALUES
+('social_google_enabled', '0'),
+('social_facebook_enabled', '0'),
+('social_tiktok_enabled', '0'),
+('phone_verification_enabled', '0'),
+('professional_location_required', '1'),
+('push_notifications_enabled', '0');

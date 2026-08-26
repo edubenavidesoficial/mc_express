@@ -6,14 +6,47 @@ import 'package:mc_express/core/storage/session_store.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
 import 'package:mc_express/core/widgets/primary_button.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  bool _isCheckingSession = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _redirectIfLoggedIn());
+  }
+
+  Future<void> _redirectIfLoggedIn() async {
+    final isLoggedIn = await SessionStore.instance.isLoggedIn;
+    if (!mounted) return;
+    if (!isLoggedIn) {
+      setState(() => _isCheckingSession = false);
+      return;
+    }
+    final unlocked = await SessionLockService.instance.authenticate();
+    if (!mounted) return;
+    if (unlocked) {
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+    } else {
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false);
+    }
+  }
 
   Future<void> _continue(BuildContext context) async {
     final isLoggedIn = await SessionStore.instance.isLoggedIn;
     if (!context.mounted) return;
     if (!isLoggedIn) {
-      Navigator.of(context).pushNamed(AppRoutes.auth);
+      Navigator.of(context).pushNamed(AppRoutes.accountType);
       return;
     }
     final unlocked = await SessionLockService.instance.authenticate();
@@ -29,6 +62,12 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (_isCheckingSession) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: AppTheme.yellow)),
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
         child: LayoutBuilder(
@@ -79,7 +118,9 @@ class SplashScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).pushNamed(AppRoutes.home);
+                        Navigator.of(
+                          context,
+                        ).pushNamed(AppRoutes.professionals);
                       },
                       child: const Text(
                         'Explorar servicios',
@@ -145,34 +186,67 @@ class _LocationPill extends StatelessWidget {
   }
 }
 
-class _SearchPreview extends StatelessWidget {
+class _SearchPreview extends StatefulWidget {
   const _SearchPreview();
+
+  @override
+  State<_SearchPreview> createState() => _SearchPreviewState();
+}
+
+class _SearchPreviewState extends State<_SearchPreview> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _search() {
+    final query = _controller.text.trim();
+    Navigator.of(context).pushNamed(
+      AppRoutes.professionals,
+      arguments: query.isEmpty ? null : query,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 58,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(left: 16, right: 6),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.search_rounded, color: AppTheme.black),
-          SizedBox(width: 12),
+          const Icon(Icons.search_rounded, color: AppTheme.black),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              'Plomero, electricista, pintor...',
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Color(0xFF5C5C5C),
+            child: TextField(
+              controller: _controller,
+              onSubmitted: (_) => _search(),
+              style: const TextStyle(
+                color: AppTheme.black,
                 fontSize: 15,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w800,
+              ),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                hintText: 'Plomero, electricista, pintor...',
+                hintStyle: TextStyle(
+                  color: Color(0xFF5C5C5C),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
-          Icon(Icons.tune_rounded, color: AppTheme.black),
+          IconButton(
+            onPressed: _search,
+            icon: const Icon(Icons.tune_rounded, color: AppTheme.black),
+          ),
         ],
       ),
     );
@@ -203,18 +277,26 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppTheme.charcoal,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.amber.withValues(alpha: 0.22)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: AppTheme.softWhite,
-          fontWeight: FontWeight.w700,
+    return InkWell(
+      onTap: () {
+        Navigator.of(
+          context,
+        ).pushNamed(AppRoutes.professionals, arguments: label);
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppTheme.charcoal,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppTheme.amber.withValues(alpha: 0.22)),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: AppTheme.softWhite,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
