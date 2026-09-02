@@ -45,17 +45,16 @@ void main() {
 
     expect(find.text('¿QUÉ SERVICIO'), findsOneWidget);
     expect(find.text('NECESITAS?'), findsOneWidget);
-    expect(find.text('SOLICITAR SERVICIO'), findsOneWidget);
+    expect(find.text('NECESITO OTRO SERVICIO'), findsOneWidget);
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('No se pudieron cargar las categorías.'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('SOLICITAR SERVICIO'));
-    await tester.tap(find.text('SOLICITAR SERVICIO'));
+    await tester.ensureVisible(find.text('NECESITO OTRO SERVICIO'));
+    await tester.tap(find.text('NECESITO OTRO SERVICIO'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Profesionales cerca de ti'), findsOneWidget);
-    await tester.pump(const Duration(seconds: 1));
-    expect(find.text('No se pudieron cargar profesionales.'), findsOneWidget);
+    expect(find.text('Solicitar cotización'), findsOneWidget);
+    expect(find.text('BUSCAR PROFESIONAL'), findsOneWidget);
   });
 
   testWidgets('Opens the quote request screen', (WidgetTester tester) async {

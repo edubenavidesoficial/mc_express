@@ -56,7 +56,7 @@ CREATE TABLE payments (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   service_request_id BIGINT UNSIGNED NOT NULL,
   amount DECIMAL(10,2) NOT NULL,
-  method ENUM('cash','transfer','wallet','digital_wallet') NOT NULL,
+  method ENUM('cash','transfer','wallet','digital_wallet','card_credit','card_debit') NOT NULL,
   status ENUM('pending','paid','rejected','refunded') NOT NULL DEFAULT 'pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (service_request_id) REFERENCES service_requests(id)
@@ -106,4 +106,12 @@ INSERT INTO app_settings (setting_key, setting_value) VALUES
 ('social_tiktok_enabled', '0'),
 ('phone_verification_enabled', '0'),
 ('professional_location_required', '1'),
-('push_notifications_enabled', '0');
+('push_notifications_enabled', '0'),
+('card_payments_enabled', '1'),
+('cash_payments_enabled', '1'),
+('transfer_payments_enabled', '1'),
+('wallet_payments_enabled', '1'),
+('sos_button_enabled', '1'),
+('recurring_services_enabled', '0'),
+('favorites_enabled', '1'),
+('invoice_enabled', '0');

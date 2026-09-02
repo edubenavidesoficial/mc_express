@@ -402,7 +402,7 @@ class _RequestServiceButton extends StatelessWidget {
       height: 64,
       child: FilledButton(
         onPressed: () {
-          Navigator.of(context).pushNamed(AppRoutes.professionals);
+          Navigator.of(context).pushNamed(AppRoutes.quoteRequest);
         },
         style: FilledButton.styleFrom(
           backgroundColor: AppTheme.yellow,
@@ -415,7 +415,7 @@ class _RequestServiceButton extends StatelessWidget {
           children: [
             Flexible(
               child: Text(
-                'SOLICITAR SERVICIO',
+                'NECESITO OTRO SERVICIO',
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: AppTheme.black,

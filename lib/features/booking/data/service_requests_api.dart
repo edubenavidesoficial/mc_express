@@ -159,11 +159,12 @@ class ServiceRequestsApi {
     required int requestId,
     required double amount,
     required String method,
+    String status = 'paid',
   }) async {
     await _client.post('/services/requests/$requestId/payments', {
       'amount': amount,
       'method': method,
-      'status': 'paid',
+      'status': status,
     });
   }
 
