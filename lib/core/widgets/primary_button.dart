@@ -11,13 +11,13 @@ class PrimaryButton extends StatelessWidget {
 
   final String label;
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: 56,
+      constraints: const BoxConstraints(minHeight: 56),
       child: FilledButton.icon(
         onPressed: onPressed,
         icon: Icon(icon, color: AppTheme.black),

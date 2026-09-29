@@ -167,7 +167,7 @@ class AppButton extends StatelessWidget {
   });
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool outlined;
   final Color? backgroundColor;
   final Color? foregroundColor;
@@ -177,9 +177,9 @@ class AppButton extends StatelessWidget {
     final Color bg = backgroundColor ?? AppTheme.yellow;
     final Color fg = foregroundColor ?? AppTheme.black;
 
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: 62,
+      constraints: const BoxConstraints(minHeight: 62),
       child: FilledButton(
         onPressed: onPressed,
         style: FilledButton.styleFrom(

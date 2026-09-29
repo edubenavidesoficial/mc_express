@@ -238,7 +238,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   : _isRegister
                   ? 'REGISTRARME'
                   : 'INGRESAR',
-              onPressed: _isLoading ? () {} : _submit,
+              onPressed: _isLoading ? null : _submit,
             ),
             const SizedBox(height: 14),
             AppButton(
