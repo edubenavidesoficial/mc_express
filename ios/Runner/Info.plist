@@ -32,6 +32,8 @@
 	<string>MC Express usa Face ID para proteger tu sesión guardada.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>MC Express usa tus fotos para adjuntar evidencias al servicio.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>MC Express usa tu ubicación para mostrar profesionales y servicios disponibles cerca de ti.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

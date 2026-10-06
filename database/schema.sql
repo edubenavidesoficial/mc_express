@@ -115,3 +115,8 @@ INSERT INTO app_settings (setting_key, setting_value) VALUES
 ('recurring_services_enabled', '0'),
 ('favorites_enabled', '1'),
 ('invoice_enabled', '0');
+-- Opciones configurables de Google Maps (la clave nativa no debe almacenarse en BD).
+INSERT INTO app_settings (setting_key, setting_value) VALUES
+('maps_enabled', '1'), ('maps_default_latitude', '-1.2491'),
+('maps_default_longitude', '-78.6168'), ('maps_default_zoom', '14.3'),
+('google_maps_map_id', '');

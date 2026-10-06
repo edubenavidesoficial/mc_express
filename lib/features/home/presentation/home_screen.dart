@@ -1,485 +1,544 @@
 import 'package:flutter/material.dart';
-import 'package:mc_express/core/constants/app_assets.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:mc_express/core/routes/app_routes.dart';
 import 'package:mc_express/core/theme/app_theme.dart';
-import 'package:mc_express/core/widgets/branded_scaffold.dart';
 import 'package:mc_express/features/booking/data/service_request_draft.dart';
 import 'package:mc_express/features/search/data/professionals_api.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF050505), Color(0xFF0A0A0A), Color(0xFF000000)],
-          ),
-        ),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final bool compact = constraints.maxHeight < 730;
-              final double horizontalPadding = constraints.maxWidth > 430
-                  ? 34
-                  : 22;
-
-              return SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  compact ? 10 : 18,
-                  horizontalPadding,
-                  24,
-                ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight - 34,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const _TopBar(),
-                      SizedBox(height: compact ? 18 : 28),
-                      Center(
-                        child: Image.asset(
-                          AppAssets.logo,
-                          width: compact ? 210 : 248,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      SizedBox(height: compact ? 26 : 36),
-                      const _HeroTitle(),
-                      SizedBox(height: compact ? 18 : 24),
-                      const _ServiceSearchField(),
-                      SizedBox(height: compact ? 24 : 32),
-                      const Text(
-                        'CATEGORÍAS',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 25,
-                          fontWeight: FontWeight.w900,
-                          fontStyle: FontStyle.italic,
-                          letterSpacing: 0,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const _CategoryGrid(),
-                      SizedBox(height: compact ? 24 : 32),
-                      const _RequestServiceButton(),
-                      const AppBottomNav(currentIndex: 0),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: AppTheme.yellow,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.yellow.withValues(alpha: 0.25),
-                blurRadius: 18,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.handshake_rounded,
-            color: AppTheme.black,
-            size: 24,
-          ),
-        ),
-        const Spacer(),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pushNamed(AppRoutes.quoteRequest);
-          },
-          style: TextButton.styleFrom(
-            foregroundColor: AppTheme.yellow,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          ),
-          child: const Text(
-            'COTIZACION',
-            style: TextStyle(
-              color: AppTheme.yellow,
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              fontStyle: FontStyle.italic,
-              letterSpacing: 0,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _HeroTitle extends StatelessWidget {
-  const _HeroTitle();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '¿QUÉ SERVICIO',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 36,
-            fontWeight: FontWeight.w900,
-            fontStyle: FontStyle.italic,
-            height: 1.04,
-            letterSpacing: 0,
-          ),
-        ),
-        Text(
-          'NECESITAS?',
-          style: TextStyle(
-            color: AppTheme.yellow,
-            fontSize: 36,
-            fontWeight: FontWeight.w900,
-            fontStyle: FontStyle.italic,
-            height: 1.04,
-            letterSpacing: 0,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ServiceSearchField extends StatefulWidget {
-  const _ServiceSearchField();
-
-  @override
-  State<_ServiceSearchField> createState() => _ServiceSearchFieldState();
-}
-
-class _ServiceSearchFieldState extends State<_ServiceSearchField> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 62,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F2),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.42),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              onSubmitted: _search,
-              style: const TextStyle(
-                color: AppTheme.black,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0,
-              ),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                hintText: 'Buscar servicio...',
-                hintStyle: TextStyle(
-                  color: Color(0xFF777777),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0,
-                ),
-              ),
-            ),
-          ),
-          IconButton(
-            onPressed: () => _search(_controller.text),
-            icon: const Icon(
-              Icons.search_rounded,
-              color: AppTheme.black,
-              size: 36,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _search(String value) {
-    Navigator.of(
-      context,
-    ).pushNamed(AppRoutes.professionals, arguments: value.trim());
-  }
-}
-
-class _CategoryGrid extends StatefulWidget {
-  const _CategoryGrid();
-
-  @override
-  State<_CategoryGrid> createState() => _CategoryGridState();
-}
-
-class _CategoryGridState extends State<_CategoryGrid> {
+class _HomeScreenState extends State<HomeScreen> {
+  static const _ambato = gmaps.LatLng(-1.2491, -78.6168);
+  final _searchController = TextEditingController();
   final _professionalsApi = ProfessionalsApi();
-  late Future<List<CategoryDto>> _categoriesFuture;
+  gmaps.GoogleMapController? _mapController;
+  late Future<List<CategoryDto>> _categories;
+  gmaps.LatLng _clientLocation = _ambato;
+  String _serviceLocation = 'Detectando ubicación…';
+  bool _isLocating = true;
 
   @override
   void initState() {
     super.initState();
-    _categoriesFuture = _professionalsApi.categories();
+    _categories = _professionalsApi.categories();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCurrentLocation());
   }
 
   @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<CategoryDto>>(
-      future: _categoriesFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SizedBox(
-            height: 170,
-            child: Center(
-              child: CircularProgressIndicator(color: AppTheme.yellow),
-            ),
-          );
-        }
-        if (snapshot.hasError) {
-          return _ApiMessage(
-            message: 'No se pudieron cargar las categorías.',
-            onRetry: () {
-              setState(() {
-                _categoriesFuture = _professionalsApi.categories();
-              });
-            },
-          );
-        }
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
-        final categories = snapshot.data ?? const [];
-        if (categories.isEmpty) {
-          return const _ApiMessage(message: 'Aún no hay categorías activas.');
-        }
-
-        return GridView.builder(
-          itemCount: categories.length,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            mainAxisSpacing: 14,
-            crossAxisSpacing: 14,
-            childAspectRatio: 0.92,
-          ),
-          itemBuilder: (context, index) {
-            final category = categories[index];
-            return _CategoryCard(
-              category: _ServiceCategory(
-                id: category.id,
-                label: category.name,
-                icon: _iconForCategory(category.name),
-              ),
-            );
-          },
-        );
-      },
+  void _search([String? value]) {
+    final query = (value ?? _searchController.text).trim();
+    Navigator.of(context).pushNamed(
+      AppRoutes.professionals,
+      arguments: query.isEmpty ? null : query,
     );
   }
 
-  IconData _iconForCategory(String name) {
-    final value = name.toLowerCase();
-    if (value.contains('alba')) return Icons.engineering_rounded;
-    if (value.contains('jardin')) return Icons.energy_savings_leaf_rounded;
-    if (value.contains('plom')) return Icons.plumbing_rounded;
-    if (value.contains('elect')) return Icons.bolt_rounded;
-    if (value.contains('pint')) return Icons.format_paint_rounded;
-    return Icons.handyman_rounded;
+  void _selectCategory(CategoryDto category) {
+    if (category.id == 0) {
+      _search(category.name);
+      return;
+    }
+    Navigator.of(context).pushNamed(
+      AppRoutes.professionals,
+      arguments: ServiceRequestDraft(
+        categoryId: category.id,
+        categoryName: category.name,
+      ),
+    );
   }
-}
 
-class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({required this.category});
+  Future<void> _loadCurrentLocation() async {
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        throw StateError('El servicio de ubicación está desactivado.');
+      }
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        throw StateError('No autorizaste el acceso a la ubicación.');
+      }
 
-  final _ServiceCategory category;
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+      final location = gmaps.LatLng(position.latitude, position.longitude);
+      var label = 'Tu ubicación actual';
+      try {
+        final placemarks = await geocoding.Geocoding(
+          locale: const Locale('es', 'EC'),
+        ).placemarkFromCoordinates(position.latitude, position.longitude);
+        if (placemarks.isNotEmpty) {
+          final place = placemarks.first;
+          label =
+              _firstNonEmpty([
+                place.locality,
+                place.subAdministrativeArea,
+                place.administrativeArea,
+              ]) ??
+              label;
+        }
+      } catch (_) {
+        // GPS data remains useful even if the device cannot resolve the city.
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _clientLocation = location;
+        _serviceLocation = label;
+        _isLocating = false;
+      });
+      _mapController?.animateCamera(
+        gmaps.CameraUpdate.newLatLngZoom(location, 14.8),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _serviceLocation = 'Ubicación no disponible';
+        _isLocating = false;
+      });
+    }
+  }
+
+  String? _firstNonEmpty(List<String?> values) {
+    for (final value in values) {
+      if (value != null && value.trim().isNotEmpty) return value.trim();
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        Navigator.of(context).pushNamed(
-          AppRoutes.professionals,
-          arguments: ServiceRequestDraft(
-            categoryId: category.id,
-            categoryName: category.label,
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    return Scaffold(
+      backgroundColor: AppTheme.black,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: _DarkCityMap(
+              center: _ambato,
+              clientLocation: _clientLocation,
+              onMapCreated: (controller) {
+                _mapController = controller;
+                if (!_isLocating) {
+                  controller.animateCamera(
+                    gmaps.CameraUpdate.newLatLngZoom(_clientLocation, 14.8),
+                  );
+                }
+              },
+            ),
           ),
-        );
-      },
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF0C0C0C),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFF3E3E3E), width: 1.8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.white.withValues(alpha: 0.05),
-              blurRadius: 5,
-              offset: const Offset(0, 1),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.50),
-              blurRadius: 12,
-              offset: const Offset(0, 7),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(6, 12, 6, 9),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(category.icon, color: AppTheme.yellow, size: 42),
-              const SizedBox(height: 11),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  category.label,
-                  maxLines: 1,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0,
+          SafeArea(
+            bottom: false,
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 18,
+                  left: 18,
+                  child: _RoundMapButton(
+                    icon: Icons.menu_rounded,
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.account),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RequestServiceButton extends StatelessWidget {
-  const _RequestServiceButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 64,
-      child: FilledButton(
-        onPressed: () {
-          Navigator.of(context).pushNamed(AppRoutes.quoteRequest);
-        },
-        style: FilledButton.styleFrom(
-          backgroundColor: AppTheme.yellow,
-          foregroundColor: AppTheme.black,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          elevation: 0,
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Text(
-                'NECESITO OTRO SERVICIO',
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: AppTheme.black,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0,
+                Positioned(
+                  top: 115,
+                  left: 0,
+                  right: 0,
+                  child: _ServiceLocation(
+                    locationName: _serviceLocation,
+                    isLocating: _isLocating,
+                  ),
                 ),
-              ),
-            ),
-            SizedBox(width: 22),
-            Icon(Icons.chevron_right_rounded, color: AppTheme.black, size: 42),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ServiceCategory {
-  const _ServiceCategory({
-    required this.id,
-    required this.label,
-    required this.icon,
-  });
-
-  final int id;
-  final String label;
-  final IconData icon;
-}
-
-class _ApiMessage extends StatelessWidget {
-  const _ApiMessage({required this.message, this.onRetry});
-
-  final String message;
-  final VoidCallback? onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF181816),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-      ),
-      child: Column(
-        children: [
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0,
+                Positioned(
+                  right: 18,
+                  bottom: 390 + bottomInset,
+                  child: _RoundMapButton(
+                    icon: Icons.navigation_rounded,
+                    onTap: _loadCurrentLocation,
+                  ),
+                ),
+              ],
             ),
           ),
-          if (onRetry != null) ...[
-            const SizedBox(height: 10),
-            TextButton(onPressed: onRetry, child: const Text('Reintentar')),
-          ],
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: _DiscoverSheet(
+              controller: _searchController,
+              categories: _categories,
+              onSearch: _search,
+              onSelectCategory: _selectCategory,
+            ),
+          ),
         ],
       ),
     );
   }
+}
+
+class _DarkCityMap extends StatelessWidget {
+  const _DarkCityMap({
+    required this.center,
+    required this.clientLocation,
+    required this.onMapCreated,
+  });
+  final gmaps.LatLng center;
+  final gmaps.LatLng clientLocation;
+  final ValueChanged<gmaps.GoogleMapController> onMapCreated;
+
+  @override
+  Widget build(BuildContext context) {
+    return gmaps.GoogleMap(
+      initialCameraPosition: gmaps.CameraPosition(target: center, zoom: 14.3),
+      onMapCreated: onMapCreated,
+      myLocationButtonEnabled: false,
+      compassEnabled: false,
+      zoomControlsEnabled: false,
+      style: _darkMapStyle,
+      markers: {
+        gmaps.Marker(
+          markerId: const gmaps.MarkerId('client'),
+          position: clientLocation,
+          icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(
+            gmaps.BitmapDescriptor.hueAzure,
+          ),
+        ),
+        ..._MapPoints.trades.map(
+          (point) => gmaps.Marker(
+            markerId: gmaps.MarkerId(point.$1),
+            position: point.$2,
+            infoWindow: gmaps.InfoWindow(title: point.$1),
+          ),
+        ),
+      },
+    );
+  }
+}
+
+const _darkMapStyle = '''[
+  {"elementType":"geometry","stylers":[{"color":"#161616"}]},
+  {"elementType":"labels.text.fill","stylers":[{"color":"#bdbdbd"}]},
+  {"elementType":"labels.text.stroke","stylers":[{"color":"#161616"}]},
+  {"featureType":"road","elementType":"geometry","stylers":[{"color":"#303030"}]},
+  {"featureType":"water","elementType":"geometry","stylers":[{"color":"#050505"}]},
+  {"featureType":"poi","stylers":[{"visibility":"off"}]}
+]''';
+
+class _MapPoints {
+  static const trades = [
+    ('Albañil', gmaps.LatLng(-1.2457, -78.6219)),
+    ('Electricista', gmaps.LatLng(-1.2437, -78.6117)),
+    ('Plomero', gmaps.LatLng(-1.2527, -78.6096)),
+    ('Pintor', gmaps.LatLng(-1.2541, -78.6223)),
+  ];
+}
+
+class _RoundMapButton extends StatelessWidget {
+  const _RoundMapButton({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Material(
+    color: const Color(0xFF202020),
+    shape: const CircleBorder(),
+    elevation: 10,
+    child: InkWell(
+      onTap: onTap,
+      customBorder: const CircleBorder(),
+      child: SizedBox(
+        width: 58,
+        height: 58,
+        child: Icon(icon, color: Colors.white, size: 31),
+      ),
+    ),
+  );
+}
+
+class _ServiceLocation extends StatelessWidget {
+  const _ServiceLocation({
+    required this.locationName,
+    required this.isLocating,
+  });
+
+  final String locationName;
+  final bool isLocating;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Container(
+      padding: const EdgeInsets.fromLTRB(15, 11, 10, 11),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1D1D1D),
+        borderRadius: BorderRadius.circular(17),
+        boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 16)],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Punto de servicio',
+                style: TextStyle(color: Color(0xFFBDBDBD), fontSize: 14),
+              ),
+              Text(
+                locationName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 21,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(width: 22),
+          isLocating
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    color: AppTheme.yellow,
+                    strokeWidth: 2.5,
+                  ),
+                )
+              : const Icon(
+                  Icons.my_location_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _DiscoverSheet extends StatelessWidget {
+  const _DiscoverSheet({
+    required this.controller,
+    required this.categories,
+    required this.onSearch,
+    required this.onSelectCategory,
+  });
+  final TextEditingController controller;
+  final Future<List<CategoryDto>> categories;
+  final ValueChanged<String> onSearch;
+  final ValueChanged<CategoryDto> onSelectCategory;
+  @override
+  Widget build(BuildContext context) => Container(
+    height: 365 + MediaQuery.paddingOf(context).bottom,
+    padding: EdgeInsets.fromLTRB(
+      18,
+      9,
+      18,
+      14 + MediaQuery.paddingOf(context).bottom,
+    ),
+    decoration: const BoxDecoration(
+      color: Color(0xFF111111),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    child: Column(
+      children: [
+        Container(
+          width: 42,
+          height: 4,
+          decoration: BoxDecoration(
+            color: const Color(0xFF858585),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(height: 13),
+        SizedBox(
+          height: 104,
+          child: _CategoryCarousel(
+            categories: categories,
+            onSelect: onSelectCategory,
+          ),
+        ),
+        const SizedBox(height: 15),
+        TextField(
+          controller: controller,
+          onSubmitted: onSearch,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFF242424),
+            prefixIcon: const Icon(
+              Icons.search_rounded,
+              color: Colors.white,
+              size: 32,
+            ),
+            suffixIcon: IconButton(
+              icon: const Icon(
+                Icons.arrow_forward_rounded,
+                color: AppTheme.yellow,
+              ),
+              onPressed: () => onSearch(controller.text),
+            ),
+            hintText: '¿Qué servicio necesitas?',
+            hintStyle: const TextStyle(
+              color: Color(0xFFD6D6D6),
+              fontSize: 19,
+              fontWeight: FontWeight.w600,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        const _RecentSearches(),
+      ],
+    ),
+  );
+}
+
+class _CategoryCarousel extends StatelessWidget {
+  const _CategoryCarousel({required this.categories, required this.onSelect});
+  final Future<List<CategoryDto>> categories;
+  final ValueChanged<CategoryDto> onSelect;
+  static const _fallback = [
+    CategoryDto(id: 0, name: 'Albañil'),
+    CategoryDto(id: 0, name: 'Electricista'),
+    CategoryDto(id: 0, name: 'Plomero'),
+    CategoryDto(id: 0, name: 'Pintor'),
+  ];
+  @override
+  Widget build(BuildContext context) => FutureBuilder<List<CategoryDto>>(
+    future: categories,
+    builder: (context, snapshot) {
+      final items = snapshot.data?.isNotEmpty == true
+          ? snapshot.data!
+          : _fallback;
+      return ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        separatorBuilder: (_, index) => const SizedBox(width: 10),
+        itemBuilder: (context, index) => _CategoryTile(
+          category: items[index],
+          onTap: () => onSelect(items[index]),
+        ),
+      );
+    },
+  );
+}
+
+class _CategoryTile extends StatelessWidget {
+  const _CategoryTile({required this.category, required this.onTap});
+  final CategoryDto category;
+  final VoidCallback onTap;
+  IconData get _icon {
+    final name = category.name.toLowerCase();
+    if (name.contains('elect')) return Icons.electric_bolt_rounded;
+    if (name.contains('plom')) return Icons.plumbing_rounded;
+    if (name.contains('pint')) return Icons.format_paint_rounded;
+    return Icons.engineering_rounded;
+  }
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(14),
+    child: Container(
+      width: 106,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF252525),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Center(child: Icon(_icon, size: 49, color: AppTheme.yellow)),
+          ),
+          Text(
+            category.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
+          const Text(
+            '●  Cerca',
+            style: TextStyle(color: Color(0xFFBDBDBD), fontSize: 12),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _RecentSearches extends StatelessWidget {
+  const _RecentSearches();
+  @override
+  Widget build(BuildContext context) => const Column(
+    children: [
+      _RecentRow(title: 'Servicio cerca de tu ubicación', subtitle: 'Ambato'),
+      SizedBox(height: 15),
+      _RecentRow(
+        title: 'Cotiza un servicio personalizado',
+        subtitle: 'Describe lo que necesitas',
+      ),
+    ],
+  );
+}
+
+class _RecentRow extends StatelessWidget {
+  const _RecentRow({required this.title, required this.subtitle});
+  final String title;
+  final String subtitle;
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      const Icon(Icons.history_rounded, color: Color(0xFFBDBDBD), size: 30),
+      const SizedBox(width: 17),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: const TextStyle(color: Color(0xFFBDBDBD), fontSize: 15),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
 }
